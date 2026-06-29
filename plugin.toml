@@ -1,0 +1,17 @@
+[plugin]
+name = "norgolith-tree-sitter-highlight"
+version = "0.1.0"
+norgolith = ">=0.4.0"
+abi = 1
+
+[hooks]
+pre_build = false
+post_convert = true
+post_render = true
+post_build = false
+
+[capabilities]
+filesystem = "none"
+network = false
+
+timeout_ms = 10000

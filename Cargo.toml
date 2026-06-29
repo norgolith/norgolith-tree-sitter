@@ -1,0 +1,25 @@
+[package]
+name = "norgolith-tree-sitter-highlight"
+version = "0.1.0"
+edition = "2021"
+authors = ["NTBBloodbath <bloodbathalchemist@protonmail.com"]
+license = "GPL-2.0"
+description = "Tree-sitter syntax highlighting plugin for Norgolith"
+repository = "https://github.com/NTBBloodbath/norgolith-tree-sitter-highlight"
+
+[lib]
+crate-type = ["cdylib"]
+
+# TODO: publish norgolith-plugin-sdk to crates.io first
+[dependencies]
+norgolith-plugin-sdk = { path = "/home/amartin/Develop/Rust/norgolith/sdk" }
+tree-sitter = "~0.26"
+tree-sitter-rust = "~0.24"
+tree-sitter-python = "~0.23"
+tree-sitter-javascript = "~0.25"
+tree-sitter-html = "~0.23"
+tree-sitter-css = "~0.23"
+scraper = "~0.23"
+regex = "1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
