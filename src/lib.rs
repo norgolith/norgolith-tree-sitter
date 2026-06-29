@@ -28,7 +28,7 @@ fn post_render_handler(json: serde_json::Value) -> Result<Option<String>, String
         return Ok(None);
     }
 
-    let css_tag = r#"<link rel="stylesheet" href="assets/tree-sitter-theme.css" />"#;
+    let css_tag = r#"<link rel="stylesheet" href="/assets/tree-sitter-theme.css" />"#;
 
     // Inject before </head>
     if let Some(pos) = html.find("</head>") {

@@ -1,5 +1,5 @@
 /* norgolith-tree-sitter-highlight — Default Syntax Theme */
-/* Include in your template: {% include "assets/tree-sitter-theme.css" %} */
+/* Semantic highlight classes via tree-sitter query API */
 
 /* Base code block styling */
 pre code {
@@ -14,144 +14,144 @@ pre code {
     border-radius: 8px;
 }
 
-/* Generic token classes (ts-{kind}) */
-.ts-keyword,
-.ts-import,
-.ts-export,
-.ts-return,
-.ts-if,
-.ts-else,
-.ts-for,
-.ts-while,
-.ts-loop,
-.ts-match,
-.ts-fn,
-.ts-struct,
-.ts-enum,
-.ts-impl,
-.ts-trait,
-.ts-type,
-.ts-type_identifier,
-.ts-module,
-.ts-mod,
-.ts-let,
-.ts-var,
-.ts-const,
-.ts-async,
-.ts-await,
-.ts-unsafe,
-.ts-extern,
-.ts-where,
-.ts-use {
+/* Keywords */
+.ts-keyword {
     color: #cba6f7;
     font-weight: bold;
 }
 
+/* Functions */
+.ts-function,
+.ts-function.method,
+.ts-function.macro {
+    color: #89b4fa;
+}
+
+.ts-function.builtin {
+    color: #89b4fa;
+    font-style: italic;
+}
+
 /* Strings */
-.ts-string_literal,
-.ts-string,
-.ts-double_quote,
-.ts_single_quote,
-.ts_interpreted_string_literal_content,
-.ts_string_content {
+.ts-string {
     color: #a6e3a1;
 }
 
+.ts-string.special {
+    color: #f5c2e7;
+    font-style: italic;
+}
+
 /* Comments */
-.ts_comment,
-.ts_line_comment,
-.ts_block_comment {
+.ts-comment {
     color: #6c7086;
     font-style: italic;
 }
 
-/* Functions */
-.ts_function,
-.ts_function_item,
-.ts_call_expression,
-.ts_function_name,
-.ts_identifier {
-    color: #89b4fa;
-}
-
-/* Numbers */
-.ts_number_literal,
-.ts_integer_literal,
-.ts_float_literal,
-.ts_number {
-    color: #fab387;
+.ts-comment.documentation {
+    color: #6c7086;
+    font-style: italic;
+    font-weight: bold;
 }
 
 /* Types */
-.ts_type,
-.ts_type_annotation,
-.ts_qualified_type {
+.ts-type {
     color: #f9e2af;
     font-weight: bold;
 }
 
-/* Operators and punctuation */
-.ts_operator,
-.ts_punctuation,
-.ts_. {
-    color: #9399b2;
+.ts-type.builtin {
+    color: #f9e2af;
+    font-weight: bold;
+}
+
+/* Constants */
+.ts-constant {
+    color: #fab387;
+}
+
+.ts-constant.builtin {
+    color: #fab387;
+    font-weight: bold;
+}
+
+/* Variables */
+.ts-variable {
+    color: #cdd6f4;
+}
+
+.ts-variable.builtin {
+    color: #f38ba8;
+    font-style: italic;
+}
+
+.ts-variable.parameter {
+    color: #f38ba8;
 }
 
 /* Properties and fields */
-.ts_field_identifier,
-.ts_field,
-.ts_member,
-.ts_property {
+.ts-property {
     color: #89dceb;
-}
-
-/* Parameters and arguments */
-.ts_parameter,
-.ts_arguments,
-.ts_parameter_declaration {
-    color: #f38ba8;
-}
-
-/* Boolean and null */
-.ts_bool,
-.ts_true,
-.ts_false,
-.ts_null {
-    color: #fab387;
-    font-weight: bold;
 }
 
 /* Attributes and decorators */
-.ts_attribute,
-.ts_annotation,
-.ts_attribute_item {
+.ts-attribute {
     color: #f9e2af;
 }
 
-/* HTML-specific */
-.ts_start_tag,
-.ts_end_tag,
-.ts_tag_name {
-    color: #f38ba8;
-}
-
-/* CSS-specific */
-.ts_property_name,
-.ts_feature_query {
-    color: #89b4fa;
-}
-
-.ts_color_value,
-.ts_integer_value {
+/* Numbers */
+.ts-number {
     color: #fab387;
 }
 
-/* Python-specific */
-.ts_decorator {
-    color: #f9e2af;
+/* Operators */
+.ts-operator {
+    color: #89dceb;
 }
 
-/* JavaScript-specific */
-.ts_property_identifier {
+/* Punctuation */
+.ts-punctuation.bracket {
+    color: #9399b2;
+}
+
+.ts-punctuation.delimiter {
+    color: #9399b2;
+}
+
+.ts-punctuation.special {
+    color: #f5c2e7;
+}
+
+/* HTML tags */
+.ts-tag {
+    color: #f38ba8;
+}
+
+.ts-tag.error {
+    color: #f38ba8;
+    text-decoration: wavy underline;
+    text-decoration-color: #f38ba8;
+}
+
+/* Escape sequences */
+.ts-escape {
+    color: #f5c2e7;
+}
+
+/* Labels (Rust lifetimes) */
+.ts-label {
     color: #89dceb;
+    font-style: italic;
+}
+
+/* Embedded content markers */
+.ts-embedded {
+    color: #a6e3a1;
+    font-style: italic;
+}
+
+/* Constructor calls (Capitalized names) */
+.ts-constructor {
+    color: #f9e2af;
+    font-weight: bold;
 }

@@ -1,131 +1,111 @@
-use tree_sitter::Parser;
+use tree_sitter_highlight::{HighlightConfiguration, Highlighter, HtmlRenderer};
 
-/// Supported languages for syntax highlighting
-enum Language {
-    Rust,
-    Python,
-    JavaScript,
-    Html,
-    Css,
+/// Recognized highlight names — must match captures in .scm files.
+const HIGHLIGHT_NAMES: &[&str] = &[
+    "attribute",
+    "boolean",
+    "comment",
+    "comment.documentation",
+    "constant",
+    "constant.builtin",
+    "constructor",
+    "embedded",
+    "escape",
+    "function",
+    "function.builtin",
+    "function.method",
+    "function.macro",
+    "keyword",
+    "label",
+    "number",
+    "operator",
+    "property",
+    "punctuation.bracket",
+    "punctuation.delimiter",
+    "punctuation.special",
+    "string",
+    "string.special",
+    "tag",
+    "type",
+    "type.builtin",
+    "variable",
+    "variable.builtin",
+    "variable.parameter",
+];
+
+struct LanguageConfig {
+    language: tree_sitter::Language,
+    query: &'static str,
 }
 
-/// Map language string to Language enum
-fn resolve_language(lang: &str) -> Option<Language> {
+fn lang_config(lang: &str) -> Option<LanguageConfig> {
     match lang {
-        "rust" | "rs" => Some(Language::Rust),
-        "python" | "py" => Some(Language::Python),
-        "javascript" | "js" | "jsx" => Some(Language::JavaScript),
-        "html" => Some(Language::Html),
-        "css" => Some(Language::Css),
+        "rust" | "rs" => Some(LanguageConfig {
+            language: tree_sitter_rust::LANGUAGE.into(),
+            query: include_str!("queries/rust.scm"),
+        }),
+        "python" | "py" => Some(LanguageConfig {
+            language: tree_sitter_python::LANGUAGE.into(),
+            query: include_str!("queries/python.scm"),
+        }),
+        "javascript" | "js" | "jsx" => Some(LanguageConfig {
+            language: tree_sitter_javascript::LANGUAGE.into(),
+            query: include_str!("queries/javascript.scm"),
+        }),
+        "html" => Some(LanguageConfig {
+            language: tree_sitter_html::LANGUAGE.into(),
+            query: include_str!("queries/html.scm"),
+        }),
+        "css" => Some(LanguageConfig {
+            language: tree_sitter_css::LANGUAGE.into(),
+            query: include_str!("queries/css.scm"),
+        }),
         _ => None,
     }
 }
 
 /// Highlight source code using tree-sitter for the given language.
 ///
-/// Returns HTML with `<span class="ts-{kind}">` wrapped tokens.
+/// Returns HTML with `<span class="ts-{name}">` wrapped tokens.
 /// Falls back to plain text if the language is unsupported or parsing fails.
 pub fn highlight(source: &str, lang: &str) -> String {
-    let language = match resolve_language(lang) {
-        Some(l) => l,
+    let lc = match lang_config(lang) {
+        Some(c) => c,
         None => return html_escape(source),
     };
 
-    let mut parser = Parser::new();
-    match &language {
-        Language::Rust => {
-            if parser.set_language(&tree_sitter_rust::LANGUAGE.into()).is_err() {
-                return html_escape(source);
-            }
-        }
-        Language::Python => {
-            if parser.set_language(&tree_sitter_python::LANGUAGE.into()).is_err() {
-                return html_escape(source);
-            }
-        }
-        Language::JavaScript => {
-            if parser.set_language(&tree_sitter_javascript::LANGUAGE.into()).is_err() {
-                return html_escape(source);
-            }
-        }
-        Language::Html => {
-            if parser.set_language(&tree_sitter_html::LANGUAGE.into()).is_err() {
-                return html_escape(source);
-            }
-        }
-        Language::Css => {
-            if parser.set_language(&tree_sitter_css::LANGUAGE.into()).is_err() {
-                return html_escape(source);
-            }
-        }
-    }
+    let mut config = match HighlightConfiguration::new(
+        lc.language,
+        lang,
+        lc.query,
+        "",
+        "",
+    ) {
+        Ok(c) => c,
+        Err(_) => return html_escape(source),
+    };
+    config.configure(HIGHLIGHT_NAMES);
 
-    let tree = match parser.parse(source, None) {
-        Some(t) => t,
-        None => return html_escape(source),
+    let mut highlighter = Highlighter::new();
+    let events = match highlighter.highlight(&config, source.as_bytes(), None, |_| None) {
+        Ok(e) => e,
+        Err(_) => return html_escape(source),
     };
 
-    let root = tree.root_node();
-    let mut output = String::with_capacity(source.len() * 2);
-    let mut cursor = root.walk();
-    let mut pos = 0;
+    let mut renderer = HtmlRenderer::new();
+    let _ = renderer.render(events, source.as_bytes(), &|highlight, out| {
+        let idx = highlight.0;
+        if let Some(name) = HIGHLIGHT_NAMES.get(idx) {
+            out.extend_from_slice(b"class=\"ts-");
+            out.extend_from_slice(name.as_bytes());
+            out.extend_from_slice(b"\"");
+        }
+    });
 
-    walk_tree(source, &mut output, &mut cursor, &mut pos);
-
-    output
+    let html = String::from_utf8_lossy(&renderer.html);
+    html.trim_end().to_string()
 }
 
-/// Walk the CST using a cursor, producing highlighted HTML.
-///
-/// Algorithm from Gabriel Sanches' blog post on tree-sitter-on-the-web,
-/// transcribed from Go to Rust.
-fn walk_tree(source: &str, output: &mut String, cursor: &mut tree_sitter::TreeCursor, pos: &mut usize) {
-    loop {
-        let node = cursor.node();
-
-        // If this node has named children, descend into them
-        if node.named_child_count() > 0 && cursor.goto_first_child() {
-            continue;
-        }
-
-        // This is a leaf node
-        let range = node.byte_range();
-
-        // Write any text that appears before this node (whitespace, punctuation)
-        if range.start > *pos {
-            let between = &source[*pos..range.start];
-            output.push_str(&html_escape(between));
-        }
-
-        // Write the node itself wrapped in a span
-        let value = &source[range.start..range.end];
-        output.push_str(&format!(
-            r#"<span class="ts-{}">{}</span>"#,
-            node.kind(),
-            html_escape(value)
-        ));
-
-        *pos = range.end;
-
-        // Try to move to the next sibling
-        if cursor.goto_next_sibling() {
-            continue;
-        }
-
-        // Backtrack to find a parent with a sibling
-        loop {
-            if !cursor.goto_parent() {
-                // Reached the root, we're done
-                return;
-            }
-            if cursor.goto_next_sibling() {
-                break;
-            }
-        }
-    }
-}
-
-/// HTML-escape a string for safe output
 fn html_escape(input: &str) -> String {
     let mut result = String::with_capacity(input.len());
     for c in input.chars() {
@@ -158,8 +138,51 @@ mod tests {
 }"#;
         let result = highlight(source, "rust");
         assert!(result.contains("<span class="));
-        assert!(result.contains("fn"));
-        assert!(result.contains("main"));
+        assert!(result.contains("ts-keyword"));
+        assert!(result.contains("ts-function"));
+        assert!(result.contains("ts-string"));
+    }
+
+    #[test]
+    fn test_highlight_python() {
+        let source = r#"def hello():
+    print("world")"#;
+        let result = highlight(source, "python");
+        assert!(result.contains("<span class="));
+        assert!(result.contains("ts-keyword"));
+        assert!(result.contains("ts-function"));
+        assert!(result.contains("ts-string"));
+    }
+
+    #[test]
+    fn test_highlight_javascript() {
+        let source = r#"function greet(name) {
+    return "hi";
+}"#;
+        let result = highlight(source, "javascript");
+        assert!(result.contains("<span class="));
+        assert!(result.contains("ts-keyword"));
+        assert!(result.contains("ts-function"));
+        assert!(result.contains("ts-string"));
+    }
+
+    #[test]
+    fn test_highlight_html() {
+        let source = r#"<div class="foo">hello</div>"#;
+        let result = highlight(source, "html");
+        assert!(result.contains("<span class="));
+        assert!(result.contains("ts-tag"));
+        assert!(result.contains("ts-attribute"));
+        assert!(result.contains("ts-string"));
+    }
+
+    #[test]
+    fn test_highlight_css() {
+        let source = r#"body { color: red; }"#;
+        let result = highlight(source, "css");
+        assert!(result.contains("<span class="));
+        assert!(result.contains("ts-tag"));
+        assert!(result.contains("ts-property"));
     }
 
     #[test]
