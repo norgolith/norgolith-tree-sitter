@@ -235,6 +235,8 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 [[package]]
 name = "norgolith-plugin-sdk"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5eb39b198717f7c72774ad09d90a1a53371eb7780033105d90489ce3cc4aa846"
 dependencies = [
  "libc",
  "serde",
