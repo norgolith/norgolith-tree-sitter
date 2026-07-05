@@ -58,7 +58,7 @@ fn ensure_theme_css() {
     let _ = std::fs::create_dir_all(cwd.join("assets"));
 
     if let Err(e) = std::fs::write(&theme_path, DEFAULT_THEME) {
-        eprintln!("[norgolith-tree-sitter-highlight] Failed to write theme CSS: {}", e);
+        norgolith_plugin_sdk::plugin_log!("warn", "Failed to write theme CSS: {}", e);
     }
 }
 

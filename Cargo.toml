@@ -23,4 +23,4 @@ regex = "1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tree-sitter-highlight = "~0.26"
-norgolith-plugin-sdk = "0.1.0"
+norgolith-plugin-sdk = "1.0.1"
