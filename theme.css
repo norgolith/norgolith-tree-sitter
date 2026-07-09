@@ -1,5 +1,6 @@
 /* norgolith-tree-sitter-highlight — Default Syntax Theme */
-/* Semantic highlight classes via tree-sitter query API */
+/* Catppuccin Mocha palette */
+/* Generated from nvim-treesitter capture names */
 
 /* Base code block styling */
 pre code {
@@ -15,143 +16,141 @@ pre code {
 }
 
 /* Keywords */
-.ts-keyword {
-    color: #cba6f7;
-    font-weight: bold;
-}
+.ts-keyword { color: #cba6f7; font-weight: bold; }
+.ts-keyword.ts-conditional { color: #cba6f7; font-weight: bold; }
+.ts-keyword.ts-conditional.ts-ternary { color: #cba6f7; }
+.ts-keyword.ts-coroutine { color: #89b4fa; font-style: italic; }
+.ts-keyword.ts-debug { color: #6c7086; }
+.ts-keyword.ts-directive { color: #6c7086; font-style: italic; }
+.ts-keyword.ts-directive.ts-define { color: #f38ba8; }
+.ts-keyword.ts-exception { color: #f38ba8; }
+.ts-keyword.ts-function { color: #89b4fa; font-weight: bold; }
+.ts-keyword.ts-import { color: #f5c2e7; }
+.ts-keyword.ts-modifier { color: #cba6f7; }
+.ts-keyword.ts-operator { color: #89b4fa; }
+.ts-keyword.ts-repeat { color: #cba6f7; }
+.ts-keyword.ts-return { color: #f38ba8; }
+.ts-keyword.ts-type { color: #f9e2af; font-weight: bold; }
 
 /* Functions */
-.ts-function,
-.ts-function.method,
-.ts-function.macro {
-    color: #89b4fa;
-}
-
-.ts-function.builtin {
-    color: #89b4fa;
-    font-style: italic;
-}
+.ts-function { color: #89b4fa; }
+.ts-function.ts-builtin { color: #89b4fa; font-style: italic; }
+.ts-function.ts-call { color: #89b4fa; }
+.ts-function.ts-macro { color: #89b4fa; }
+.ts-function.ts-method { color: #89b4fa; }
+.ts-function.ts-method.ts-call { color: #89b4fa; }
 
 /* Strings */
-.ts-string {
-    color: #a6e3a1;
-}
+.ts-string { color: #a6e3a1; }
+.ts-string.ts-documentation { color: #a6e3a1; font-style: italic; }
+.ts-string.ts-escape { color: #f5c2e7; }
+.ts-string.ts-regexp { color: #f5c2e7; }
+.ts-string.ts-special { color: #f5c2e7; font-style: italic; }
+.ts-string.ts-special.ts-key { color: #f5c2e7; }
+.ts-string.ts-special.ts-path { color: #f5c2e7; }
+.ts-string.ts-special.ts-symbol { color: #f5c2e7; }
+.ts-string.ts-special.ts-url { color: #89b4fa; text-decoration: underline; }
 
-.ts-string.special {
-    color: #f5c2e7;
-    font-style: italic;
-}
-
-/* Comments */
-.ts-comment {
-    color: #6c7086;
-    font-style: italic;
-}
-
-.ts-comment.documentation {
-    color: #6c7086;
-    font-style: italic;
-    font-weight: bold;
-}
-
-/* Types */
-.ts-type {
-    color: #f9e2af;
-    font-weight: bold;
-}
-
-.ts-type.builtin {
-    color: #f9e2af;
-    font-weight: bold;
-}
-
-/* Constants */
-.ts-constant {
-    color: #fab387;
-}
-
-.ts-constant.builtin {
-    color: #fab387;
-    font-weight: bold;
-}
-
-/* Variables */
-.ts-variable {
-    color: #cdd6f4;
-}
-
-.ts-variable.builtin {
-    color: #f38ba8;
-    font-style: italic;
-}
-
-.ts-variable.parameter {
-    color: #f38ba8;
-}
-
-/* Properties and fields */
-.ts-property {
-    color: #89dceb;
-}
-
-/* Attributes and decorators */
-.ts-attribute {
-    color: #f9e2af;
-}
+/* Characters */
+.ts-character { color: #f9e2af; }
+.ts-character.ts-special { color: #f5c2e7; }
 
 /* Numbers */
-.ts-number {
-    color: #fab387;
-}
+.ts-number { color: #fab387; }
+.ts-number.ts-float { color: #fab387; }
+
+/* Comments */
+.ts-comment { color: #6c7086; font-style: italic; }
+.ts-comment.ts-documentation { color: #6c7086; font-style: italic; font-weight: bold; }
+
+/* Types */
+.ts-type { color: #f9e2af; font-weight: bold; }
+.ts-type.ts-builtin { color: #fab387; font-weight: bold; }
+.ts-type.ts-definition { color: #f9e2af; }
+
+/* Constants */
+.ts-constant { color: #fab387; }
+.ts-constant.ts-builtin { color: #fab387; font-weight: bold; }
+.ts-constant.ts-macro { color: #fab387; font-style: italic; }
+
+/* Booleans */
+.ts-boolean { color: #fab387; font-weight: bold; }
+
+/* Variables */
+.ts-variable { color: #cdd6f4; }
+.ts-variable.ts-builtin { color: #f38ba8; font-style: italic; }
+.ts-variable.ts-member { color: #89dceb; }
+.ts-variable.ts-parameter { color: #f38ba8; }
+.ts-variable.ts-parameter.builtin { color: #f38ba8; }
+
+/* Properties and fields */
+.ts-property { color: #89dceb; }
+
+/* Attributes and decorators */
+.ts-attribute { color: #f9e2af; }
+.ts-attribute.ts-builtin { color: #f9e2af; font-style: italic; }
+
+/* Labels */
+.ts-label { color: #89dceb; font-style: italic; }
 
 /* Operators */
-.ts-operator {
-    color: #89dceb;
-}
+.ts-operator { color: #89dceb; }
 
 /* Punctuation */
-.ts-punctuation.bracket {
-    color: #9399b2;
-}
-
-.ts-punctuation.delimiter {
-    color: #9399b2;
-}
-
-.ts-punctuation.special {
-    color: #f5c2e7;
-}
+.ts-punctuation.ts-bracket { color: #9399b2; }
+.ts-punctuation.ts-delimiter { color: #9399b2; }
+.ts-punctuation.ts-special { color: #f5c2e7; }
 
 /* HTML tags */
-.ts-tag {
-    color: #f38ba8;
-}
+.ts-tag { color: #f38ba8; }
+.ts-tag.ts-attribute { color: #89dceb; }
+.ts-tag.ts-builtin { color: #f38ba8; }
+.ts-tag.ts-delimiter { color: #9399b2; }
+.ts-tag.ts-error { color: #f38ba8; text-decoration: wavy underline; text-decoration-color: #f38ba8; }
 
-.ts-tag.error {
-    color: #f38ba8;
-    text-decoration: wavy underline;
-    text-decoration-color: #f38ba8;
-}
+/* Constructors */
+.ts-constructor { color: #f9e2af; font-weight: bold; }
+
+/* Embedded content */
+.ts-embedded { color: #a6e3a1; font-style: italic; }
 
 /* Escape sequences */
-.ts-escape {
-    color: #f5c2e7;
-}
+.ts-escape { color: #f5c2e7; }
 
-/* Labels (Rust lifetimes) */
-.ts-label {
-    color: #89dceb;
-    font-style: italic;
-}
+/* Modules and namespaces */
+.ts-module { color: #89b4fa; font-style: italic; }
+.ts-module.ts-builtin { color: #89b4fa; }
+.ts-namespace { color: #89b4fa; }
 
-/* Embedded content markers */
-.ts-embedded {
-    color: #a6e3a1;
-    font-style: italic;
-}
+/* Markdown markup */
+.ts-markup.ts-heading { color: #cba6f7; font-weight: bold; }
+.ts-markup.ts-heading.ts-1 { color: #f38ba8; font-weight: bold; }
+.ts-markup.ts-heading.ts-2 { color: #fab387; font-weight: bold; }
+.ts-markup.ts-heading.ts-3 { color: #f9e2af; font-weight: bold; }
+.ts-markup.ts-heading.ts-4 { color: #a6e3a1; font-weight: bold; }
+.ts-markup.ts-heading.ts-5 { color: #89b4fa; font-weight: bold; }
+.ts-markup.ts-heading.ts-6 { color: #89dceb; font-weight: bold; }
+.ts-markup.ts-italic { font-style: italic; }
+.ts-markup.ts-strong { font-weight: bold; }
+.ts-markup.ts-strikethrough { text-decoration: line-through; }
+.ts-markup.ts-underline { text-decoration: underline; }
+.ts-markup.ts-link { color: #89b4fa; text-decoration: underline; }
+.ts-markup.ts-link.ts-label { color: #89dceb; }
+.ts-markup.ts-link.ts-url { color: #89b4fa; text-decoration: underline; }
+.ts-markup.ts-list { color: #f5c2e7; }
+.ts-markup.ts-list.ts-checked { color: #a6e3a1; }
+.ts-markup.ts-list.ts-unchecked { color: #9399b2; }
+.ts-markup.ts-quote { color: #6c7086; font-style: italic; }
+.ts-markup.ts-raw { color: #a6e3a1; }
+.ts-markup.ts-raw.ts-block { color: #a6e3a1; background: #313244; }
 
-/* Constructor calls (Capitalized names) */
-.ts-constructor {
-    color: #f9e2af;
-    font-weight: bold;
-}
+/* CSS-specific at-rules */
+.ts-charset { color: #6c7086; font-style: italic; }
+.ts-import { color: #f5c2e7; }
+.ts-keyframes { color: #f5c2e7; }
+.ts-media { color: #f5c2e7; }
+.ts-namespace { color: #89b4fa; }
+.ts-supports { color: #f5c2e7; }
+
+/* @interface */
+.ts-interface { color: #f9e2af; font-weight: bold; }

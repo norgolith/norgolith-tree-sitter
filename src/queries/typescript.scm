@@ -390,216 +390,211 @@
 
 (switch_default
   "default" @keyword.conditional)
-(jsx_element
-  open_tag: (jsx_opening_element
-    [
-      "<"
-      ">"
-    ] @tag.delimiter))
+; inherits: ecma
 
-(jsx_element
-  close_tag: (jsx_closing_element
-    [
-      "</"
-      ">"
-    ] @tag.delimiter))
+"require" @keyword.import
 
-(jsx_self_closing_element
+(import_require_clause
+  source: (string) @string.special.url)
+
+[
+  "declare"
+  "implements"
+  "type"
+  "override"
+  "module"
+  "asserts"
+  "infer"
+  "is"
+  "using"
+] @keyword
+
+[
+  "namespace"
+  "interface"
+  "enum"
+] @keyword.type
+
+[
+  "keyof"
+  "satisfies"
+] @keyword.operator
+
+(as_expression
+  "as" @keyword.operator)
+
+(mapped_type_clause
+  "as" @keyword.operator)
+
+[
+  "abstract"
+  "private"
+  "protected"
+  "public"
+  "readonly"
+] @keyword.modifier
+
+; types
+(type_identifier) @type
+
+(predefined_type) @type.builtin
+
+(import_statement
+  "type"
+  (import_clause
+    (named_imports
+      (import_specifier
+        name: (identifier) @type))))
+
+(template_literal_type) @string
+
+(non_null_expression
+  "!" @operator)
+
+; punctuation
+(type_arguments
   [
     "<"
-    "/>"
-  ] @tag.delimiter)
+    ">"
+  ] @punctuation.bracket)
 
-(jsx_attribute
-  (property_identifier) @tag.attribute)
+(type_parameters
+  [
+    "<"
+    ">"
+  ] @punctuation.bracket)
 
-(jsx_opening_element
-  name: (identifier) @tag.builtin)
+(object_type
+  [
+    "{|"
+    "|}"
+  ] @punctuation.bracket)
 
-(jsx_closing_element
-  name: (identifier) @tag.builtin)
+(union_type
+  "|" @punctuation.delimiter)
 
-(jsx_self_closing_element
-  name: (identifier) @tag.builtin)
+(intersection_type
+  "&" @punctuation.delimiter)
 
-(jsx_opening_element
-  ((identifier) @tag
-    (#match? @tag "^[A-Z]")))
+(type_annotation
+  ":" @punctuation.delimiter)
 
-; Handle the dot operator effectively - <My.Component>
-(jsx_opening_element
-  (member_expression
-    (identifier) @tag.builtin
-    (property_identifier) @tag))
+(type_predicate_annotation
+  ":" @punctuation.delimiter)
 
-(jsx_closing_element
-  ((identifier) @tag
-    (#match? @tag "^[A-Z]")))
+(index_signature
+  ":" @punctuation.delimiter)
 
-; Handle the dot operator effectively - </My.Component>
-(jsx_closing_element
-  (member_expression
-    (identifier) @tag.builtin
-    (property_identifier) @tag))
+(omitting_type_annotation
+  "-?:" @punctuation.delimiter)
 
-(jsx_self_closing_element
-  ((identifier) @tag
-    (#match? @tag "^[A-Z]")))
+(adding_type_annotation
+  "+?:" @punctuation.delimiter)
 
-; Handle the dot operator effectively - <My.Component />
-(jsx_self_closing_element
-  (member_expression
-    (identifier) @tag.builtin
-    (property_identifier) @tag))
+(opting_type_annotation
+  "?:" @punctuation.delimiter)
 
-(html_character_reference) @tag
+"?." @punctuation.delimiter
 
-(jsx_text) @none @spell
+(abstract_method_signature
+  "?" @punctuation.special)
 
-(html_character_reference) @character.special
+(method_signature
+  "?" @punctuation.special)
 
-((jsx_element
-  (jsx_opening_element
-    name: (identifier) @_tag)
-  (jsx_text) @markup.heading)
-  (#eq? @_tag "title"))
+(method_definition
+  "?" @punctuation.special)
 
-((jsx_element
-  (jsx_opening_element
-    name: (identifier) @_tag)
-  (jsx_text) @markup.heading.1)
-  (#eq? @_tag "h1"))
+(property_signature
+  "?" @punctuation.special)
 
-((jsx_element
-  (jsx_opening_element
-    name: (identifier) @_tag)
-  (jsx_text) @markup.heading.2)
-  (#eq? @_tag "h2"))
+(optional_parameter
+  "?" @punctuation.special)
 
-((jsx_element
-  (jsx_opening_element
-    name: (identifier) @_tag)
-  (jsx_text) @markup.heading.3)
-  (#eq? @_tag "h3"))
+(optional_type
+  "?" @punctuation.special)
 
-((jsx_element
-  (jsx_opening_element
-    name: (identifier) @_tag)
-  (jsx_text) @markup.heading.4)
-  (#eq? @_tag "h4"))
+(public_field_definition
+  [
+    "?"
+    "!"
+  ] @punctuation.special)
 
-((jsx_element
-  (jsx_opening_element
-    name: (identifier) @_tag)
-  (jsx_text) @markup.heading.5)
-  (#eq? @_tag "h5"))
+(flow_maybe_type
+  "?" @punctuation.special)
 
-((jsx_element
-  (jsx_opening_element
-    name: (identifier) @_tag)
-  (jsx_text) @markup.heading.6)
-  (#eq? @_tag "h6"))
+(template_type
+  [
+    "${"
+    "}"
+  ] @punctuation.special)
 
-((jsx_element
-  (jsx_opening_element
-    name: (identifier) @_tag)
-  (jsx_text) @markup.strong)
-  (#any-of? @_tag "strong" "b"))
-
-((jsx_element
-  (jsx_opening_element
-    name: (identifier) @_tag)
-  (jsx_text) @markup.italic)
-  (#any-of? @_tag "em" "i"))
-
-((jsx_element
-  (jsx_opening_element
-    name: (identifier) @_tag)
-  (jsx_text) @markup.strikethrough)
-  (#any-of? @_tag "s" "del"))
-
-((jsx_element
-  (jsx_opening_element
-    name: (identifier) @_tag)
-  (jsx_text) @markup.underline)
-  (#eq? @_tag "u"))
-
-((jsx_element
-  (jsx_opening_element
-    name: (identifier) @_tag)
-  (jsx_text) @markup.raw)
-  (#any-of? @_tag "code" "kbd"))
-
-((jsx_element
-  (jsx_opening_element
-    name: (identifier) @_tag)
-  (jsx_text) @markup.link.label)
-  (#eq? @_tag "a"))
-
-((jsx_attribute
-  (property_identifier) @_attr
-  (string
-    (string_fragment) @string.special.url))
-  (#any-of? @_attr "href" "src"))
-
-((jsx_element) @_jsx_element
-  (#set! @_jsx_element bo.commentstring "{/* [[:space:]] */}"))
-
-((jsx_attribute) @_jsx_attribute
-  (#set! @_jsx_attribute bo.commentstring "// [[:space:]]"))
-; inherits: ecma,jsx
+(conditional_type
+  [
+    "?"
+    ":"
+  ] @keyword.conditional.ternary)
 
 ; Parameters
-(formal_parameters
-  (identifier) @variable.parameter)
+(required_parameter
+  pattern: (identifier) @variable.parameter)
 
-(formal_parameters
+(optional_parameter
+  pattern: (identifier) @variable.parameter)
+
+(required_parameter
   (rest_pattern
     (identifier) @variable.parameter))
 
 ; ({ a }) => null
-(formal_parameters
+(required_parameter
   (object_pattern
     (shorthand_property_identifier_pattern) @variable.parameter))
 
 ; ({ a = b }) => null
-(formal_parameters
+(required_parameter
   (object_pattern
     (object_assignment_pattern
       (shorthand_property_identifier_pattern) @variable.parameter)))
 
 ; ({ a: b }) => null
-(formal_parameters
+(required_parameter
   (object_pattern
     (pair_pattern
       value: (identifier) @variable.parameter)))
 
 ; ([ a ]) => null
-(formal_parameters
+(required_parameter
   (array_pattern
     (identifier) @variable.parameter))
-
-; ({ a } = { a }) => null
-(formal_parameters
-  (assignment_pattern
-    (object_pattern
-      (shorthand_property_identifier_pattern) @variable.parameter)))
-
-; ({ a = b } = { a }) => null
-(formal_parameters
-  (assignment_pattern
-    (object_pattern
-      (object_assignment_pattern
-        (shorthand_property_identifier_pattern) @variable.parameter))))
 
 ; a => null
 (arrow_function
   parameter: (identifier) @variable.parameter)
 
-; optional parameters
-(formal_parameters
-  (assignment_pattern
-    left: (identifier) @variable.parameter))
+; global declaration
+(ambient_declaration
+  "global" @module)
 
-; punctuation
-(optional_chain) @punctuation.delimiter
+; function signatures
+(ambient_declaration
+  (function_signature
+    name: (identifier) @function))
+
+; method signatures
+(method_signature
+  name: (_) @function.method)
+
+(abstract_method_signature
+  name: (property_identifier) @function.method)
+
+; property signatures
+(property_signature
+  name: (property_identifier) @function.method
+  type: (type_annotation
+    [
+      (union_type
+        (parenthesized_type
+          (function_type)))
+      (function_type)
+    ]))

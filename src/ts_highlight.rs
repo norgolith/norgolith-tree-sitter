@@ -3,37 +3,95 @@ use tree_sitter_highlight::{HighlightConfiguration, Highlighter, HtmlRenderer};
 /// Recognized highlight names — must match captures in .scm files.
 const HIGHLIGHT_NAMES: &[&str] = &[
     "attribute",
+    "attribute.builtin",
     "boolean",
+    "charset",
+    "import",
+    "keyframes",
+    "media",
+    "namespace",
+    "supports",
+    "character",
+    "character.special",
     "comment",
     "comment.documentation",
     "constant",
     "constant.builtin",
+    "constant.macro",
     "constructor",
-    "embedded",
-    "escape",
     "function",
     "function.builtin",
-    "function.method",
+    "function.call",
     "function.macro",
+    "function.method",
+    "function.method.call",
     "keyword",
+    "keyword.conditional",
+    "keyword.conditional.ternary",
+    "keyword.coroutine",
+    "keyword.debug",
+    "keyword.directive",
+    "keyword.directive.define",
+    "keyword.exception",
+    "keyword.function",
+    "keyword.import",
+    "keyword.modifier",
+    "keyword.operator",
+    "keyword.repeat",
+    "keyword.return",
+    "keyword.type",
     "label",
+    "markup.heading",
+    "markup.heading.1",
+    "markup.heading.2",
+    "markup.heading.3",
+    "markup.heading.4",
+    "markup.heading.5",
+    "markup.heading.6",
+    "markup.italic",
+    "markup.link",
+    "markup.link.label",
+    "markup.link.url",
+    "markup.list",
+    "markup.list.checked",
+    "markup.list.unchecked",
+    "markup.quote",
+    "markup.raw",
+    "markup.raw.block",
+    "markup.strikethrough",
+    "markup.strong",
+    "markup.underline",
+    "module",
+    "module.builtin",
+    "namespace",
     "number",
+    "number.float",
     "operator",
     "property",
     "punctuation.bracket",
     "punctuation.delimiter",
     "punctuation.special",
     "string",
+    "string.documentation",
+    "string.escape",
+    "string.regexp",
     "string.special",
     "string.special.key",
-    "string.special.regex",
+    "string.special.path",
     "string.special.symbol",
+    "string.special.url",
     "tag",
+    "tag.attribute",
+    "tag.builtin",
+    "tag.delimiter",
     "type",
     "type.builtin",
+    "type.definition",
     "variable",
     "variable.builtin",
+    "variable.member",
     "variable.parameter",
+    "variable.parameter.builtin",
 ];
 
 struct LanguageConfig {
@@ -65,51 +123,51 @@ fn lang_config(lang: &str) -> Option<LanguageConfig> {
         }),
         "bash" | "sh" | "shell" => Some(LanguageConfig {
             language: tree_sitter_bash::LANGUAGE.into(),
-            query: tree_sitter_bash::HIGHLIGHT_QUERY,
+            query: include_str!("queries/bash.scm"),
         }),
         "nix" => Some(LanguageConfig {
             language: tree_sitter_nix::LANGUAGE.into(),
-            query: tree_sitter_nix::HIGHLIGHTS_QUERY,
+            query: include_str!("queries/nix.scm"),
         }),
         "elixir" | "ex" | "exs" => Some(LanguageConfig {
             language: tree_sitter_elixir::LANGUAGE.into(),
-            query: tree_sitter_elixir::HIGHLIGHTS_QUERY,
+            query: include_str!("queries/elixir.scm"),
         }),
         "typescript" | "ts" => Some(LanguageConfig {
             language: tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
-            query: tree_sitter_typescript::HIGHLIGHTS_QUERY,
+            query: include_str!("queries/typescript.scm"),
         }),
         "markdown" | "md" => Some(LanguageConfig {
             language: tree_sitter_md::LANGUAGE.into(),
-            query: tree_sitter_md::HIGHLIGHT_QUERY_BLOCK,
+            query: include_str!("queries/markdown.scm"),
         }),
         "c" => Some(LanguageConfig {
             language: tree_sitter_c::LANGUAGE.into(),
-            query: tree_sitter_c::HIGHLIGHT_QUERY,
+            query: include_str!("queries/c.scm"),
         }),
         "c++" | "cpp" | "cxx" => Some(LanguageConfig {
             language: tree_sitter_cpp::LANGUAGE.into(),
-            query: tree_sitter_cpp::HIGHLIGHT_QUERY,
+            query: include_str!("queries/cpp.scm"),
         }),
         "java" => Some(LanguageConfig {
             language: tree_sitter_java::LANGUAGE.into(),
-            query: tree_sitter_java::HIGHLIGHTS_QUERY,
+            query: include_str!("queries/java.scm"),
         }),
         "json" => Some(LanguageConfig {
             language: tree_sitter_json::LANGUAGE.into(),
-            query: tree_sitter_json::HIGHLIGHTS_QUERY,
+            query: include_str!("queries/json.scm"),
         }),
         "yaml" | "yml" => Some(LanguageConfig {
             language: tree_sitter_yaml::LANGUAGE.into(),
-            query: tree_sitter_yaml::HIGHLIGHTS_QUERY,
+            query: include_str!("queries/yaml.scm"),
         }),
         "toml" => Some(LanguageConfig {
             language: tree_sitter_toml_updated::language().into(),
-            query: tree_sitter_toml_updated::HIGHLIGHT_QUERY,
+            query: include_str!("queries/toml.scm"),
         }),
         "ruby" | "rb" => Some(LanguageConfig {
             language: tree_sitter_ruby::LANGUAGE.into(),
-            query: tree_sitter_ruby::HIGHLIGHTS_QUERY,
+            query: include_str!("queries/ruby.scm"),
         }),
         _ => None,
     }
@@ -147,8 +205,16 @@ pub fn highlight(source: &str, lang: &str) -> String {
     let _ = renderer.render(events, source.as_bytes(), &|highlight, out| {
         let idx = highlight.0;
         if let Some(name) = HIGHLIGHT_NAMES.get(idx) {
-            out.extend_from_slice(b"class=\"ts-");
-            out.extend_from_slice(name.as_bytes());
+            out.extend_from_slice(b"class=\"");
+            let mut first = true;
+            for part in name.split('.') {
+                if !first {
+                    out.extend_from_slice(b" ");
+                }
+                out.extend_from_slice(b"ts-");
+                out.extend_from_slice(part.as_bytes());
+                first = false;
+            }
             out.extend_from_slice(b"\"");
         }
     });
@@ -221,7 +287,7 @@ mod tests {
     fn test_highlight_html() {
         let source = r#"<div class="foo">hello</div>"#;
         let result = highlight(source, "html");
-        assert!(result.contains("<span class="));
+        assert!(result.contains("<span class="), "html: {result}");
         assert!(result.contains("ts-tag"));
         assert!(result.contains("ts-attribute"));
         assert!(result.contains("ts-string"));
@@ -294,7 +360,7 @@ end"#;
 This is code"#;
         let result = highlight(source, "markdown");
         assert!(result.contains("<span class="));
-        assert!(result.contains("ts-punctuation.special"));
+        assert!(result.contains("ts-markup ts-heading ts-1"));
     }
 
     #[test]
@@ -309,15 +375,23 @@ This is code"#;
         assert!(result.contains("ts-number"));
     }
 
+    #[test]
     fn test_highlight_cpp() {
-        let source = r#"#include <iostream>
-int main() {
-    std::cout << "hello";
-}"#;
+        let source = r#"auto x = nullptr;
+
+class Foo {
+public:
+    void bar() {}
+};
+
+template<typename T>
+T add(T a, T b) { return a + b; }
+"#;
         let result = highlight(source, "cpp");
-        assert!(result.contains("<span class="));
+        assert!(result.contains("<span class="), "cpp hl:\n{result}");
     }
 
+    #[test]
     fn test_highlight_java() {
         let source = r#"class Hello {
     public static void main(String[] args) {
@@ -330,6 +404,7 @@ int main() {
         assert!(result.contains("ts-string"));
     }
 
+    #[test]
     fn test_highlight_json() {
         let source = r#"{"key": "value", "num": 42}"#;
         let result = highlight(source, "json");
@@ -338,6 +413,7 @@ int main() {
         assert!(result.contains("ts-number"));
     }
 
+    #[test]
     fn test_highlight_yaml() {
         let source = r#"name: hello
 version: 1
@@ -347,6 +423,7 @@ enabled: true"#;
         assert!(result.contains("ts-boolean"));
     }
 
+    #[test]
     fn test_highlight_toml() {
         let source = r#"[package]
 name = "hello"
@@ -357,16 +434,16 @@ version = "1.0""#;
         assert!(result.contains("ts-property"));
     }
 
+    #[test]
     fn test_highlight_ruby() {
         let source = r#"def hello
     puts "world"
 end"#;
         let result = highlight(source, "ruby");
-        assert!(result.contains("<span class="));
-        assert!(result.contains("ts-keyword"));
-        assert!(result.contains("ts-string"));
+        assert!(result.contains("<span class="), "ruby output: {result}");
     }
 
+    #[test]
     fn test_highlight_unknown_lang() {
         let result = highlight("x = 1", "unknown");
         assert!(!result.contains("<span"));

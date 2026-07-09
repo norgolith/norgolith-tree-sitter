@@ -95,7 +95,8 @@
   (attribute_name) @_attr
   (quoted_attribute_value
     (attribute_value) @string.special.url))
-  (#any-of? @_attr "href" "src"))
+  (#any-of? @_attr "href" "src")
+  (#set! @string.special.url url @string.special.url))
 
 [
   "<"
@@ -105,16 +106,3 @@
 ] @tag.delimiter
 
 "=" @operator
-(tag_name) @tag
-(erroneous_end_tag_name) @tag.error
-(doctype) @constant
-(attribute_name) @attribute
-(attribute_value) @string
-(comment) @comment
-
-[
-  "<"
-  ">"
-  "</"
-  "/>"
-] @punctuation.bracket
