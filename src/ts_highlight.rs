@@ -25,6 +25,9 @@ const HIGHLIGHT_NAMES: &[&str] = &[
     "punctuation.special",
     "string",
     "string.special",
+    "string.special.key",
+    "string.special.regex",
+    "string.special.symbol",
     "tag",
     "type",
     "type.builtin",
@@ -79,6 +82,34 @@ fn lang_config(lang: &str) -> Option<LanguageConfig> {
         "markdown" | "md" => Some(LanguageConfig {
             language: tree_sitter_md::LANGUAGE.into(),
             query: tree_sitter_md::HIGHLIGHT_QUERY_BLOCK,
+        }),
+        "c" => Some(LanguageConfig {
+            language: tree_sitter_c::LANGUAGE.into(),
+            query: tree_sitter_c::HIGHLIGHT_QUERY,
+        }),
+        "c++" | "cpp" | "cxx" => Some(LanguageConfig {
+            language: tree_sitter_cpp::LANGUAGE.into(),
+            query: tree_sitter_cpp::HIGHLIGHT_QUERY,
+        }),
+        "java" => Some(LanguageConfig {
+            language: tree_sitter_java::LANGUAGE.into(),
+            query: tree_sitter_java::HIGHLIGHTS_QUERY,
+        }),
+        "json" => Some(LanguageConfig {
+            language: tree_sitter_json::LANGUAGE.into(),
+            query: tree_sitter_json::HIGHLIGHTS_QUERY,
+        }),
+        "yaml" | "yml" => Some(LanguageConfig {
+            language: tree_sitter_yaml::LANGUAGE.into(),
+            query: tree_sitter_yaml::HIGHLIGHTS_QUERY,
+        }),
+        "toml" => Some(LanguageConfig {
+            language: tree_sitter_toml_updated::language().into(),
+            query: tree_sitter_toml_updated::HIGHLIGHT_QUERY,
+        }),
+        "ruby" | "rb" => Some(LanguageConfig {
+            language: tree_sitter_ruby::LANGUAGE.into(),
+            query: tree_sitter_ruby::HIGHLIGHTS_QUERY,
         }),
         _ => None,
     }
@@ -267,6 +298,75 @@ This is code"#;
     }
 
     #[test]
+    fn test_highlight_c() {
+        let source = r#"int main() {
+    return 0;
+}"#;
+        let result = highlight(source, "c");
+        assert!(result.contains("<span class="));
+        assert!(result.contains("ts-keyword"));
+        assert!(result.contains("ts-type"));
+        assert!(result.contains("ts-number"));
+    }
+
+    fn test_highlight_cpp() {
+        let source = r#"#include <iostream>
+int main() {
+    std::cout << "hello";
+}"#;
+        let result = highlight(source, "cpp");
+        assert!(result.contains("<span class="));
+    }
+
+    fn test_highlight_java() {
+        let source = r#"class Hello {
+    public static void main(String[] args) {
+        System.out.println("hi");
+    }
+}"#;
+        let result = highlight(source, "java");
+        assert!(result.contains("<span class="));
+        assert!(result.contains("ts-keyword"));
+        assert!(result.contains("ts-string"));
+    }
+
+    fn test_highlight_json() {
+        let source = r#"{"key": "value", "num": 42}"#;
+        let result = highlight(source, "json");
+        assert!(result.contains("<span class="));
+        assert!(result.contains("ts-string"));
+        assert!(result.contains("ts-number"));
+    }
+
+    fn test_highlight_yaml() {
+        let source = r#"name: hello
+version: 1
+enabled: true"#;
+        let result = highlight(source, "yaml");
+        assert!(result.contains("<span class="));
+        assert!(result.contains("ts-boolean"));
+    }
+
+    fn test_highlight_toml() {
+        let source = r#"[package]
+name = "hello"
+version = "1.0""#;
+        let result = highlight(source, "toml");
+        assert!(result.contains("<span class="));
+        assert!(result.contains("ts-string"));
+        assert!(result.contains("ts-property"));
+    }
+
+    fn test_highlight_ruby() {
+        let source = r#"def hello
+    puts "world"
+end"#;
+        let result = highlight(source, "ruby");
+        assert!(result.contains("<span class="));
+        assert!(result.contains("ts-keyword"));
+        assert!(result.contains("ts-string"));
+    }
+
     fn test_highlight_unknown_lang() {
         let result = highlight("x = 1", "unknown");
         assert!(!result.contains("<span"));
