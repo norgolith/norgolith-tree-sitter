@@ -11,13 +11,17 @@ repository = "https://github.com/NTBBloodbath/norgolith-tree-sitter-highlight"
 crate-type = ["cdylib"]
 
 [dependencies]
-
 tree-sitter = "~0.26"
 tree-sitter-rust = "~0.24"
 tree-sitter-python = "~0.23"
 tree-sitter-javascript = "~0.25"
 tree-sitter-html = "~0.23"
 tree-sitter-css = "~0.23"
+tree-sitter-bash = "~0.25"
+tree-sitter-nix = "~0.3"
+tree-sitter-elixir = "~0.3"
+tree-sitter-typescript = "~0.23"
+tree-sitter-md = "~0.5"
 scraper = "~0.23"
 regex = "1"
 serde = { version = "1.0", features = ["derive"] }

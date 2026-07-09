@@ -25,7 +25,28 @@ tree-sitter-go = "~0.23"
 
 Check the crate's docs for the language constant name (usually `LANGUAGE`).
 
-### 2. Create the highlight query
+### 2. Use the crate's highlight query (preferred)
+
+Most grammar crates ship a `highlights.scm` and expose it as a `pub const` string (e.g. `tree_sitter_bash::HIGHLIGHT_QUERY`, `tree_sitter_nix::HIGHLIGHTS_QUERY`). Use the crate constant in `lang_config()` — no `.scm` file needed:
+
+```rust
+"bash" | "sh" | "shell" => Some(LanguageConfig {
+    language: tree_sitter_bash::LANGUAGE.into(),
+    query: tree_sitter_bash::HIGHLIGHT_QUERY,
+}),
+```
+
+**Constant naming** varies by crate — check `bindings/rust/lib.rs` for the exact name. Common ones:
+
+| Pattern | Examples |
+|---------|----------|
+| `HIGHLIGHT_QUERY` | `tree-sitter-bash`, `tree-sitter-javascript` |
+| `HIGHLIGHTS_QUERY` | `tree-sitter-nix`, `tree-sitter-elixir`, `tree-sitter-python`, `tree-sitter-css`, `tree-sitter-html` |
+| `HIGHLIGHT_QUERY_BLOCK` | `tree-sitter-md` (block grammar; inline is `HIGHLIGHT_QUERY_INLINE`) |
+
+If the crate **does not** export a highlight constant (e.g. [`tree-sitter-rust`](https://crates.io/crates/tree-sitter-rust)), fall back to a custom `.scm` file:
+
+### 2b. Create a custom highlight query (fallback)
 
 Create `src/queries/<language>.scm`. This file maps tree-sitter node types to highlight names.
 

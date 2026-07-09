@@ -60,6 +60,26 @@ fn lang_config(lang: &str) -> Option<LanguageConfig> {
             language: tree_sitter_css::LANGUAGE.into(),
             query: include_str!("queries/css.scm"),
         }),
+        "bash" | "sh" | "shell" => Some(LanguageConfig {
+            language: tree_sitter_bash::LANGUAGE.into(),
+            query: tree_sitter_bash::HIGHLIGHT_QUERY,
+        }),
+        "nix" => Some(LanguageConfig {
+            language: tree_sitter_nix::LANGUAGE.into(),
+            query: tree_sitter_nix::HIGHLIGHTS_QUERY,
+        }),
+        "elixir" | "ex" | "exs" => Some(LanguageConfig {
+            language: tree_sitter_elixir::LANGUAGE.into(),
+            query: tree_sitter_elixir::HIGHLIGHTS_QUERY,
+        }),
+        "typescript" | "ts" => Some(LanguageConfig {
+            language: tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
+            query: tree_sitter_typescript::HIGHLIGHTS_QUERY,
+        }),
+        "markdown" | "md" => Some(LanguageConfig {
+            language: tree_sitter_md::LANGUAGE.into(),
+            query: tree_sitter_md::HIGHLIGHT_QUERY_BLOCK,
+        }),
         _ => None,
     }
 }
@@ -183,6 +203,67 @@ mod tests {
         assert!(result.contains("<span class="));
         assert!(result.contains("ts-tag"));
         assert!(result.contains("ts-property"));
+    }
+
+    #[test]
+    fn test_highlight_bash() {
+        let source = r#"#!/usr/bin/env bash
+for f in *.txt; do
+    echo "$f"
+done"#;
+        let result = highlight(source, "bash");
+        assert!(result.contains("<span class="));
+        assert!(result.contains("ts-keyword"));
+        assert!(result.contains("ts-function"));
+        assert!(result.contains("ts-string"));
+    }
+
+    #[test]
+    fn test_highlight_nix() {
+        let source = r#"{ pkgs }:
+with pkgs;
+let x = 1;
+in stdenv.mkDerivation {
+    name = "hello";
+}"#;
+        let result = highlight(source, "nix");
+        assert!(result.contains("<span class="));
+        assert!(result.contains("ts-keyword"));
+        assert!(result.contains("ts-string"));
+    }
+
+    #[test]
+    fn test_highlight_elixir() {
+        let source = r#"defmodule Hello do
+    def greet(name) do
+        "Hello, #{name}"
+    end
+end"#;
+        let result = highlight(source, "elixir");
+        assert!(result.contains("<span class="));
+        assert!(result.contains("ts-keyword"));
+        assert!(result.contains("ts-string"));
+    }
+
+    #[test]
+    fn test_highlight_typescript() {
+        let source = r#"interface Foo {
+    name: string;
+}"#;
+        let result = highlight(source, "typescript");
+        assert!(result.contains("<span class="));
+        assert!(result.contains("ts-keyword"));
+        assert!(result.contains("ts-type"));
+    }
+
+    #[test]
+    fn test_highlight_markdown() {
+        let source = r#"# Hello
+
+This is code"#;
+        let result = highlight(source, "markdown");
+        assert!(result.contains("<span class="));
+        assert!(result.contains("ts-punctuation.special"));
     }
 
     #[test]
