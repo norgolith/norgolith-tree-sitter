@@ -6,7 +6,7 @@ Tree-sitter syntax highlighting plugin for [Norgolith](https://github.com/NTBBlo
 
 ## What it does
 
-Adds syntax highlighting to fenced code blocks in Norg pages. Supports Rust, Python, JavaScript, HTML, and CSS.
+Adds syntax highlighting to fenced code blocks in Norg pages. Supports 14 languages.
 
 The plugin uses [tree-sitter](https://tree-sitter.github.io/) for parsing and [tree-sitter-highlight](https://crates.io/crates/tree-sitter-highlight) for token classification. Each language uses the official highlight queries bundled with its grammar crate.
 
@@ -47,33 +47,31 @@ cargo run -- build   # from the site directory
 
 ## Supported languages
 
-- Rust
-- Python
-- JavaScript
-- HTML
-- CSS
+- Rust (`rust`, `rs`)
+- Python (`python`, `py`)
+- JavaScript (`javascript`, `js`, `jsx`)
+- TypeScript (`typescript`, `ts`)
+- HTML (`html`)
+- CSS (`css`)
+- Bash / Shell (`bash`, `sh`, `shell`)
+- C (`c`)
+- C++ (`c++`, `cpp`, `cxx`)
+- Java (`java`)
+- JSON (`json`)
+- YAML (`yaml`, `yml`)
+- TOML (`toml`)
+- Ruby (`ruby`, `rb`)
+- Elixir / Erlang (`elixir`, `ex`, `exs`)
+- Nix (`nix`)
+- Markdown (`markdown`, `md`)
 
-Other languages fall back to plain text (no highlighting, no errors).
+Unlisted languages fall back to plain text (no highlighting, no errors).
 
 ## Theme
 
 The default theme uses [Catppuccin Mocha](https://github.com/catppuccin/catppuccin) colors. To customize, edit `assets/tree-sitter-theme.css` in your site directory. The file is only written once; subsequent builds will not overwrite it.
 
-Highlight classes use the `ts-` prefix with semantic names:
-
-- `ts-keyword` - control flow, declarations
-- `ts-function` - function names
-- `ts-string` - string literals
-- `ts-comment` - comments
-- `ts-type` - type names
-- `ts-number` - number literals
-- `ts-operator` - operators
-- `ts-property` - field and property names
-- `ts-punctuation.bracket` - brackets and parens
-- `ts-tag` - HTML tag names
-- `ts-attribute` - HTML attributes, decorators
-
-See the full list in `theme.css`.
+Highlight classes use the `ts-` prefix with semantic names. See `theme.css` for the full list.
 
 ## License
 
