@@ -1,4 +1,24 @@
+use std::collections::HashMap;
+use std::sync::{LazyLock, Mutex};
+use serde::Deserialize;
 use tree_sitter_highlight::{HighlightConfiguration, Highlighter, HtmlRenderer};
+
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "kebab-case")]
+pub struct PluginConfig {
+    #[serde(default)]
+    pub line_numbers: bool,
+    #[serde(default = "default_line_start")]
+    pub line_numbers_start: u32,
+}
+
+fn default_line_start() -> u32 {
+    1
+}
+
+/// Cached LanguageConfig lookup — avoids O(n) match on every call.
+static LANG_CACHE: LazyLock<Mutex<HashMap<String, LanguageConfig>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// Recognized highlight names — must match captures in .scm files.
 const HIGHLIGHT_NAMES: &[&str] = &[
@@ -94,6 +114,7 @@ const HIGHLIGHT_NAMES: &[&str] = &[
     "variable.parameter.builtin",
 ];
 
+#[derive(Clone)]
 struct LanguageConfig {
     language: tree_sitter::Language,
     query: &'static str,
@@ -169,6 +190,18 @@ fn lang_config(lang: &str) -> Option<LanguageConfig> {
             language: tree_sitter_ruby::LANGUAGE.into(),
             query: include_str!("queries/ruby.scm"),
         }),
+        "go" | "golang" => Some(LanguageConfig {
+            language: tree_sitter_go::LANGUAGE.into(),
+            query: include_str!("queries/go.scm"),
+        }),
+        "lua" => Some(LanguageConfig {
+            language: tree_sitter_lua::LANGUAGE.into(),
+            query: include_str!("queries/lua.scm"),
+        }),
+        "php" => Some(LanguageConfig {
+            language: tree_sitter_php::LANGUAGE_PHP_ONLY.into(),
+            query: include_str!("queries/php.scm"),
+        }),
         _ => None,
     }
 }
@@ -177,13 +210,21 @@ fn lang_config(lang: &str) -> Option<LanguageConfig> {
 ///
 /// Returns HTML with `<span class="ts-{name}">` wrapped tokens.
 /// Falls back to plain text if the language is unsupported or parsing fails.
-pub fn highlight(source: &str, lang: &str) -> String {
-    let lc = match lang_config(lang) {
-        Some(c) => c,
-        None => return html_escape(source),
+pub fn highlight(source: &str, lang: &str, config: &PluginConfig) -> String {
+    let lc = {
+        let mut cache = LANG_CACHE.lock().unwrap();
+        if let Some(lc) = cache.get(lang) {
+            lc.clone()
+        } else if let Some(lc) = lang_config(lang) {
+            cache.insert(lang.to_string(), lc.clone());
+            lc
+        } else {
+            return html_escape(source);
+        }
     };
 
-    let mut config = match HighlightConfiguration::new(
+    // <-- start of ponytail: full config cache if profiling shows need -->
+    let mut hl_config = match HighlightConfiguration::new(
         lc.language,
         lang,
         lc.query,
@@ -193,10 +234,11 @@ pub fn highlight(source: &str, lang: &str) -> String {
         Ok(c) => c,
         Err(_) => return html_escape(source),
     };
-    config.configure(HIGHLIGHT_NAMES);
+    hl_config.configure(HIGHLIGHT_NAMES);
+    // <-- end of ponytail: full config cache if profiling shows need -->
 
     let mut highlighter = Highlighter::new();
-    let events = match highlighter.highlight(&config, source.as_bytes(), None, |_| None) {
+    let events = match highlighter.highlight(&hl_config, source.as_bytes(), None, |_| None) {
         Ok(e) => e,
         Err(_) => return html_escape(source),
     };
@@ -219,8 +261,36 @@ pub fn highlight(source: &str, lang: &str) -> String {
         }
     });
 
-    let html = String::from_utf8_lossy(&renderer.html);
-    html.trim_end().to_string()
+    let mut html = String::from_utf8_lossy(&renderer.html).trim_end().to_string();
+
+    if config.line_numbers {
+        html = add_line_numbers(&html, config.line_numbers_start);
+    }
+
+    html
+}
+
+fn add_line_numbers(html: &str, start: u32) -> String {
+    let mut result = String::with_capacity(html.len() + 32);
+    let mut line_num = start;
+    for line in html.split('\n') {
+        if line_num > start {
+            result.push('\n');
+        }
+        if line.is_empty() {
+            result.push_str("<span class=\"ts-line\" data-ln=\"");
+            result.push_str(&line_num.to_string());
+            result.push_str("\"></span>");
+        } else {
+            result.push_str("<span class=\"ts-line\" data-ln=\"");
+            result.push_str(&line_num.to_string());
+            result.push_str("\">");
+            result.push_str(line);
+            result.push_str("</span>");
+        }
+        line_num += 1;
+    }
+    result
 }
 
 fn html_escape(input: &str) -> String {
@@ -241,6 +311,10 @@ fn html_escape(input: &str) -> String {
 mod tests {
     use super::*;
 
+    fn default_cfg() -> PluginConfig {
+        PluginConfig::default()
+    }
+
     #[test]
     fn test_html_escape() {
         assert_eq!(html_escape("fn main() {}"), "fn main() {}");
@@ -253,7 +327,7 @@ mod tests {
         let source = r#"fn main() {
     println!("hello");
 }"#;
-        let result = highlight(source, "rust");
+        let result = highlight(source, "rust", &default_cfg());
         assert!(result.contains("<span class="));
         assert!(result.contains("ts-keyword"));
         assert!(result.contains("ts-function"));
@@ -264,7 +338,7 @@ mod tests {
     fn test_highlight_python() {
         let source = r#"def hello():
     print("world")"#;
-        let result = highlight(source, "python");
+        let result = highlight(source, "python", &default_cfg());
         assert!(result.contains("<span class="));
         assert!(result.contains("ts-keyword"));
         assert!(result.contains("ts-function"));
@@ -276,7 +350,7 @@ mod tests {
         let source = r#"function greet(name) {
     return "hi";
 }"#;
-        let result = highlight(source, "javascript");
+        let result = highlight(source, "javascript", &default_cfg());
         assert!(result.contains("<span class="));
         assert!(result.contains("ts-keyword"));
         assert!(result.contains("ts-function"));
@@ -286,7 +360,7 @@ mod tests {
     #[test]
     fn test_highlight_html() {
         let source = r#"<div class="foo">hello</div>"#;
-        let result = highlight(source, "html");
+        let result = highlight(source, "html", &default_cfg());
         assert!(result.contains("<span class="), "html: {result}");
         assert!(result.contains("ts-tag"));
         assert!(result.contains("ts-attribute"));
@@ -296,7 +370,7 @@ mod tests {
     #[test]
     fn test_highlight_css() {
         let source = r#"body { color: red; }"#;
-        let result = highlight(source, "css");
+        let result = highlight(source, "css", &default_cfg());
         assert!(result.contains("<span class="));
         assert!(result.contains("ts-tag"));
         assert!(result.contains("ts-property"));
@@ -308,7 +382,7 @@ mod tests {
 for f in *.txt; do
     echo "$f"
 done"#;
-        let result = highlight(source, "bash");
+        let result = highlight(source, "bash", &default_cfg());
         assert!(result.contains("<span class="));
         assert!(result.contains("ts-keyword"));
         assert!(result.contains("ts-function"));
@@ -323,7 +397,7 @@ let x = 1;
 in stdenv.mkDerivation {
     name = "hello";
 }"#;
-        let result = highlight(source, "nix");
+        let result = highlight(source, "nix", &default_cfg());
         assert!(result.contains("<span class="));
         assert!(result.contains("ts-keyword"));
         assert!(result.contains("ts-string"));
@@ -336,7 +410,7 @@ in stdenv.mkDerivation {
         "Hello, #{name}"
     end
 end"#;
-        let result = highlight(source, "elixir");
+        let result = highlight(source, "elixir", &default_cfg());
         assert!(result.contains("<span class="));
         assert!(result.contains("ts-keyword"));
         assert!(result.contains("ts-string"));
@@ -347,7 +421,7 @@ end"#;
         let source = r#"interface Foo {
     name: string;
 }"#;
-        let result = highlight(source, "typescript");
+        let result = highlight(source, "typescript", &default_cfg());
         assert!(result.contains("<span class="));
         assert!(result.contains("ts-keyword"));
         assert!(result.contains("ts-type"));
@@ -358,7 +432,7 @@ end"#;
         let source = r#"# Hello
 
 This is code"#;
-        let result = highlight(source, "markdown");
+        let result = highlight(source, "markdown", &default_cfg());
         assert!(result.contains("<span class="));
         assert!(result.contains("ts-markup ts-heading ts-1"));
     }
@@ -368,7 +442,7 @@ This is code"#;
         let source = r#"int main() {
     return 0;
 }"#;
-        let result = highlight(source, "c");
+        let result = highlight(source, "c", &default_cfg());
         assert!(result.contains("<span class="));
         assert!(result.contains("ts-keyword"));
         assert!(result.contains("ts-type"));
@@ -387,7 +461,7 @@ public:
 template<typename T>
 T add(T a, T b) { return a + b; }
 "#;
-        let result = highlight(source, "cpp");
+        let result = highlight(source, "cpp", &default_cfg());
         assert!(result.contains("<span class="), "cpp hl:\n{result}");
     }
 
@@ -398,7 +472,7 @@ T add(T a, T b) { return a + b; }
         System.out.println("hi");
     }
 }"#;
-        let result = highlight(source, "java");
+        let result = highlight(source, "java", &default_cfg());
         assert!(result.contains("<span class="));
         assert!(result.contains("ts-keyword"));
         assert!(result.contains("ts-string"));
@@ -407,7 +481,7 @@ T add(T a, T b) { return a + b; }
     #[test]
     fn test_highlight_json() {
         let source = r#"{"key": "value", "num": 42}"#;
-        let result = highlight(source, "json");
+        let result = highlight(source, "json", &default_cfg());
         assert!(result.contains("<span class="));
         assert!(result.contains("ts-string"));
         assert!(result.contains("ts-number"));
@@ -418,7 +492,7 @@ T add(T a, T b) { return a + b; }
         let source = r#"name: hello
 version: 1
 enabled: true"#;
-        let result = highlight(source, "yaml");
+        let result = highlight(source, "yaml", &default_cfg());
         assert!(result.contains("<span class="));
         assert!(result.contains("ts-boolean"));
     }
@@ -428,7 +502,7 @@ enabled: true"#;
         let source = r#"[package]
 name = "hello"
 version = "1.0""#;
-        let result = highlight(source, "toml");
+        let result = highlight(source, "toml", &default_cfg());
         assert!(result.contains("<span class="));
         assert!(result.contains("ts-string"));
         assert!(result.contains("ts-property"));
@@ -439,14 +513,62 @@ version = "1.0""#;
         let source = r#"def hello
     puts "world"
 end"#;
-        let result = highlight(source, "ruby");
+        let result = highlight(source, "ruby", &default_cfg());
         assert!(result.contains("<span class="), "ruby output: {result}");
     }
 
     #[test]
+    fn test_highlight_go() {
+        let source = r#"func main() {
+    fmt.Println("hello")
+}"#;
+        let result = highlight(source, "go", &default_cfg());
+        assert!(result.contains("<span class="), "go: {result}");
+        assert!(result.contains("ts-keyword"));
+        assert!(result.contains("ts-function"));
+        assert!(result.contains("ts-string"));
+    }
+
+    #[test]
+    fn test_highlight_lua() {
+        let source = r#"function hello()
+    print("world")
+end"#;
+        let result = highlight(source, "lua", &default_cfg());
+        assert!(result.contains("<span class="), "lua: {result}");
+        assert!(result.contains("ts-keyword"));
+        assert!(result.contains("ts-string"));
+    }
+
+    #[test]
+    fn test_highlight_php() {
+        let source = r#"<?php
+function hello() {
+    echo "world";
+}"#;
+        let result = highlight(source, "php", &default_cfg());
+        assert!(result.contains("<span class="), "php: {result}");
+        assert!(result.contains("ts-keyword"));
+        assert!(result.contains("ts-function"));
+        assert!(result.contains("ts-string"));
+    }
+
+    #[test]
     fn test_highlight_unknown_lang() {
-        let result = highlight("x = 1", "unknown");
+        let result = highlight("x = 1", "unknown", &default_cfg());
         assert!(!result.contains("<span"));
         assert_eq!(result, "x = 1");
+    }
+
+    #[test]
+    fn test_line_numbers() {
+        let cfg = PluginConfig {
+            line_numbers: true,
+            line_numbers_start: 1,
+        };
+        let source = "x = 1";
+        let result = highlight(source, "python", &cfg);
+        assert!(result.contains("ts-line"), "ln: {result}");
+        assert!(result.contains("data-ln=\"1\""), "ln: {result}");
     }
 }

@@ -1,9 +1,9 @@
-use crate::ts_highlight;
+use crate::ts_highlight::{self, PluginConfig};
 
 /// Highlight all `<pre><code class="lang-X">` blocks in the HTML fragment.
 ///
 /// Returns the HTML with highlighted code blocks.
-pub fn highlight_codeblocks(html: &str) -> String {
+pub fn highlight_codeblocks(html: &str, config: &PluginConfig) -> String {
     let re = code_block_regex();
     let mut result = String::with_capacity(html.len());
     let mut last_end = 0;
@@ -22,7 +22,7 @@ pub fn highlight_codeblocks(html: &str) -> String {
         let decoded = html_decode(code_content);
 
         // Highlight with tree-sitter
-        let highlighted = ts_highlight::highlight(&decoded, lang);
+        let highlighted = ts_highlight::highlight(&decoded, lang, config);
 
         // Copy text before this match
         result.push_str(&html[last_end..full_match.start()]);

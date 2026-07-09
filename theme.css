@@ -154,3 +154,20 @@ pre code {
 
 /* @interface */
 .ts-interface { color: #f9e2af; font-weight: bold; }
+
+/* Line numbers */
+pre code {
+    counter-reset: line;
+}
+.ts-line::before {
+    counter-increment: line;
+    content: attr(data-ln);
+    display: inline-block;
+    width: 3ch;
+    margin-right: 1em;
+    padding-right: 1em;
+    color: #6c7086;
+    border-right: 1px solid #6c708699;
+    text-align: right;
+    user-select: none;
+}

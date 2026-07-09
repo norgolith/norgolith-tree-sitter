@@ -2,6 +2,7 @@ mod highlight;
 mod ts_highlight;
 
 use norgolith_plugin_sdk::*;
+use ts_highlight::PluginConfig;
 
 /// Embed the default theme CSS
 const DEFAULT_THEME: &str = include_str!("../theme.css");
@@ -9,7 +10,11 @@ const DEFAULT_THEME: &str = include_str!("../theme.css");
 /// Post-convert handler: highlight code blocks in the HTML fragment.
 fn post_convert_handler(json: serde_json::Value) -> Result<Option<String>, String> {
     let ctx: TransformContext = serde_json::from_value(json).map_err(|e| e.to_string())?;
-    let highlighted = highlight::highlight_codeblocks(&ctx.html);
+    let config = ctx
+        .config
+        .and_then(|c| serde_json::from_value::<PluginConfig>(c).ok())
+        .unwrap_or_default();
+    let highlighted = highlight::highlight_codeblocks(&ctx.html, &config);
     ensure_theme_css();
     if highlighted == ctx.html {
         Ok(None)
