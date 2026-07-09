@@ -10,59 +10,39 @@ The plugin has three stages:
 2. **Tree-sitter highlighting** (`ts_highlight.rs`): tokenizes source code with a grammar and query file
 3. **CSS injection** (`lib.rs`): writes `theme.css` to the site's `assets/` dir and injects `<link>` in `<head>`
 
-Each language needs three things: a grammar crate, a highlight query file, and a match arm in `lang_config()`.
+Each language needs three things: a grammar crate, a highlight query file in `src/queries/`, and a match arm in `lang_config()`.
 
 ## Step-by-Step
 
 ### 1. Add the grammar crate
 
-Find the tree-sitter grammar crate on crates.io (e.g., `tree-sitter-go`, `tree-sitter-java`). Add it to `Cargo.toml`:
+Find the tree-sitter grammar crate on crates.io (e.g., `tree-sitter-go`). Add it to `Cargo.toml`:
 
 ```toml
-# Cargo.toml
-tree-sitter-go = "~0.23"
+tree-sitter-go = "~0.24"
 ```
 
-Check the crate's docs for the language constant name (usually `LANGUAGE`).
+The crate must export `language()` or `LANGUAGE` (the tree-sitter `Language`).
 
-### 2. Use the crate's highlight query (preferred)
+### 2. Create the highlight query file
 
-Most grammar crates ship a `highlights.scm` and expose it as a `pub const` string (e.g. `tree_sitter_bash::HIGHLIGHT_QUERY`, `tree_sitter_nix::HIGHLIGHTS_QUERY`). Use the crate constant in `lang_config()` — no `.scm` file needed:
+Create `src/queries/<language>.scm`. This file maps tree-sitter AST node types to highlight names using the same capture names as **nvim-treesitter** (`@keyword`, `@function.call`, `@variable`, etc.).
 
-```rust
-"bash" | "sh" | "shell" => Some(LanguageConfig {
-    language: tree_sitter_bash::LANGUAGE.into(),
-    query: tree_sitter_bash::HIGHLIGHT_QUERY,
-}),
-```
-
-**Constant naming** varies by crate — check `bindings/rust/lib.rs` for the exact name. Common ones:
-
-| Pattern | Examples |
-|---------|----------|
-| `HIGHLIGHT_QUERY` | `tree-sitter-bash`, `tree-sitter-javascript` |
-| `HIGHLIGHTS_QUERY` | `tree-sitter-nix`, `tree-sitter-elixir`, `tree-sitter-python`, `tree-sitter-css`, `tree-sitter-html` |
-| `HIGHLIGHT_QUERY_BLOCK` | `tree-sitter-md` (block grammar; inline is `HIGHLIGHT_QUERY_INLINE`) |
-
-If the crate **does not** export a highlight constant (e.g. [`tree-sitter-rust`](https://crates.io/crates/tree-sitter-rust)), fall back to a custom `.scm` file:
-
-### 2b. Create a custom highlight query (fallback)
-
-Create `src/queries/<language>.scm`. This file maps tree-sitter node types to highlight names.
+Start from the [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter/tree/master/runtime/queries) query for your language:
 
 ```scheme
 ; src/queries/go.scm
 
 ; Keywords
-"func" @keyword
-"return" @keyword
-"if" @keyword
-"else" @keyword
-"for" @keyword
+"func" @keyword.function
+"return" @keyword.return
+"if" @keyword.conditional
+"else" @keyword.conditional
+"for" @keyword.repeat
 
 ; Functions
 (call_expression
-  function: (identifier) @function)
+  function: (identifier) @function.call)
 
 (function_declaration
   name: (identifier) @function)
@@ -76,46 +56,44 @@ Create `src/queries/<language>.scm`. This file maps tree-sitter node types to hi
 
 ; Types
 (type_identifier) @type
-(struct_type) @type
 
 ; Numbers
 (int_literal) @number
 (float_literal) @number
+
+; Operators
+"+" @operator
+"-" @operator
+"=" @operator
+
+; Punctuation
+"," @punctuation.delimiter
+";" @punctuation.delimiter
+"(" @punctuation.bracket
+")" @punctuation.bracket
+"{" @punctuation.bracket
+"}" @punctuation.bracket
 ```
 
 **Finding node types**: Run `tree-sitter parse` on example code to see the AST, or check the grammar's `src/node-types.json`.
 
-**Available highlight names** (must be one of these):
+**; inherits:** — if the query file contains `; inherits: <base>`, resolve it at copy time by concatenating the base file before the language-specific rules (the plugin does not resolve these at runtime).
 
-| Name | What it matches |
-|------|----------------|
-| `keyword` | `if`, `for`, `return`, `fn`, etc. |
-| `function` | function/method calls and definitions |
-| `string` | string literals |
-| `number` | integer and float literals |
-| `comment` | comments |
-| `type` | type names |
-| `variable` | variable references |
-| `operator` | `+`, `-`, `=`, etc. |
-| `property` | struct fields, object properties |
-| `constant` | constants, ALL_CAPS names |
-| `boolean` | `true`, `false` |
-| `tag` | HTML tag names |
-| `attribute` | HTML attributes, decorators |
-| `constructor` | enum variants, constructors |
-| `punctuation.bracket` | `()`, `{}`, `[]` |
-| `punctuation.delimiter` | `;`, `,`, `.` |
+**#lua-match? → #match?** — nvim-treesitter uses Neovim Lua predicates (`#lua-match?`). Rust tree-sitter only supports `#match?`, `#eq?`, `#any-of?`, `#not-match?`, `#not-eq?`, `#any-not-of?`. Convert Lua patterns to regex:
+- `%d` → `[0-9]`, `%u` → `[A-Z]`, `%l` → `[a-z]`, `%w` → `[0-9A-Za-z]`
+- `%a` → `[A-Za-z]`, `%s` → `[ \t\n]`
+- Escape sequences: `%.` → `\\.`, `%$` → `\\$`
 
 ### 3. Add the match arm
 
-Edit `src/ts_highlight.rs`, add a new arm to `lang_config()`:
+Edit `src/ts_highlight.rs`. First, add the query as `include_str!` in `lang_config()`:
 
 ```rust
 fn lang_config(lang: &str) -> Option<LanguageConfig> {
     match lang {
         // ... existing languages ...
 
-        "go" => Some(LanguageConfig {
+        "go" | "golang" => Some(LanguageConfig {
             language: tree_sitter_go::LANGUAGE.into(),
             query: include_str!("queries/go.scm"),
         }),
@@ -124,32 +102,30 @@ fn lang_config(lang: &str) -> Option<LanguageConfig> {
 }
 ```
 
-The string before `|` is what users write in their code blocks (`@code go`). Add aliases if the language has common short names:
+### 4. Register highlight names (if needed)
+
+If your query uses capture names not already in `HIGHLIGHT_NAMES`, add them to the list in `ts_highlight.rs`:
 
 ```rust
-"rust" | "rs" => ...
-"python" | "py" => ...
-"javascript" | "js" | "jsx" => ...
-"go" | "golang" => ...
+const HIGHLIGHT_NAMES: &[&str] = &[
+    // ... existing names ...
+    "go.test",
+    "go.package",
+];
 ```
 
-### 4. Add CSS for new highlight names (if any)
+Check the existing list first — most names from nvim-treesitter are already registered (94 names currently).
 
-If your query uses highlight names not yet in `theme.css`, add CSS rules:
+### 5. Add CSS (if needed)
+
+If you added new capture names, add CSS rules in `theme.css`:
 
 ```css
-/* theme.css */
-
-/* New language-specific classes */
-.ts-keyword {
-    color: #cba6f7;
-    font-weight: bold;
-}
+.ts-go.ts-test { color: #a6e3a1; font-style: italic; }
+.ts-go.ts-package { color: #f5c2e7; }
 ```
 
-If the names are already covered by existing rules (`.ts-keyword`, `.ts-function`, etc.), skip this step.
-
-### 5. Add a test
+### 6. Add a test
 
 Add a test in `src/ts_highlight.rs`:
 
@@ -160,8 +136,7 @@ fn test_highlight_go() {
     fmt.Println("hello")
 }"#;
     let result = highlight(source, "go");
-    assert!(result.contains("<span class="));
-    assert!(result.contains("ts-keyword"));
+    assert!(result.contains("<span class="), "go: {result}");
     assert!(result.contains("ts-function"));
     assert!(result.contains("ts-string"));
 }
@@ -170,19 +145,93 @@ fn test_highlight_go() {
 ## Testing
 
 ```sh
-# Build the plugin
-cargo build --release
-
-# Copy to your test site
-cp target/release/libnorgolith_tree_sitter_highlight.so \
-   /path/to/my-site/plugins/norgolith-tree-sitter-highlight/
-
-# Build the site (from site directory)
-cd /path/to/my-site
-lith build
+cargo test
 ```
 
-Check the generated HTML in `public/` — code blocks should have `<span class="ts-*">` wrapped tokens.
+## Capture Names
+
+All 94 registered highlight names. Every name supports dot-separated sub-classes in CSS (e.g., `ts-keyword ts-conditional`).
+
+### Type & Structure
+| Capture | Category |
+|---------|----------|
+| `@type`, `@type.builtin`, `@type.definition` | Types |
+| `@interface` | Interfaces |
+| `@constructor` | Constructors |
+| `@module`, `@module.builtin`, `@namespace` | Modules |
+
+### Functions
+| Capture | Category |
+|---------|----------|
+| `@function`, `@function.builtin`, `@function.call` | Functions |
+| `@function.macro` | Macros |
+| `@function.method`, `@function.method.call` | Methods |
+
+### Variables
+| Capture | Category |
+|---------|----------|
+| `@variable`, `@variable.builtin` | Variables |
+| `@variable.member` | Fields |
+| `@variable.parameter`, `@variable.parameter.builtin` | Parameters |
+
+### Keywords
+| Capture | Category |
+|---------|----------|
+| `@keyword`, `@keyword.conditional`, `@keyword.conditional.ternary` | Keywords |
+| `@keyword.coroutine`, `@keyword.debug`, `@keyword.directive` | |
+| `@keyword.directive.define`, `@keyword.exception` | |
+| `@keyword.function`, `@keyword.import`, `@keyword.modifier` | |
+| `@keyword.operator`, `@keyword.repeat`, `@keyword.return` | |
+| `@keyword.type` | |
+
+### Literals
+| Capture | Category |
+|---------|----------|
+| `@string`, `@string.documentation` | Strings |
+| `@string.escape`, `@string.regexp` | |
+| `@string.special`, `@string.special.key`, `@string.special.path` | |
+| `@string.special.symbol`, `@string.special.url` | |
+| `@character`, `@character.special` | Characters |
+| `@number`, `@number.float` | Numbers |
+| `@boolean` | Booleans |
+| `@constant`, `@constant.builtin`, `@constant.macro` | Constants |
+
+### Markup
+| Capture | Category |
+|---------|----------|
+| `@markup.heading`, `@markup.heading.1`–`@markup.heading.6` | Headings |
+| `@markup.italic`, `@markup.strong` | Emphasis |
+| `@markup.strikethrough`, `@markup.underline` | Decoration |
+| `@markup.link`, `@markup.link.label`, `@markup.link.url` | Links |
+| `@markup.list`, `@markup.list.checked`, `@markup.list.unchecked` | Lists |
+| `@markup.quote`, `@markup.raw`, `@markup.raw.block` | Quotes / raw |
+
+### Tags & Attributes
+| Capture | Category |
+|---------|----------|
+| `@tag`, `@tag.attribute`, `@tag.builtin`, `@tag.delimiter` | HTML tags |
+| `@tag.error` | Invalid tags |
+| `@attribute`, `@attribute.builtin` | Attributes |
+
+### Punctuation & Operators
+| Capture | Category |
+|---------|----------|
+| `@punctuation.bracket`, `@punctuation.delimiter`, `@punctuation.special` | Punctuation |
+| `@operator` | Operators |
+| `@label` | Labels |
+
+### Metadata
+| Capture | Category |
+|---------|----------|
+| `@comment`, `@comment.documentation` | Comments |
+| `@property` | Properties |
+| `@escape` | Escape sequences |
+| `@embedded` | Embedded content |
+
+### CSS at-rules
+| Capture | Category |
+|---------|----------|
+| `@charset`, `@import`, `@keyframes`, `@media`, `@supports` | At-rules |
 
 ## File Reference
 
@@ -190,12 +239,13 @@ Check the generated HTML in `public/` — code blocks should have `<span class="
 src/
 ├── lib.rs              # Plugin hooks (post_convert, post_render)
 ├── highlight.rs        # HTML regex extraction, entity decoding
-├── ts_highlight.rs     # Tree-sitter highlighting + lang_config()
-└── queries/
+├── ts_highlight.rs     # Tree-sitter highlighting + lang_config() + HIGHLIGHT_NAMES
+└── queries/            # nvim-treesitter highlight queries (20 files)
     ├── rust.scm
     ├── python.scm
     ├── javascript.scm
+    ├── ...
     ├── html.scm
-    └── css.scm
+    └── html_tags.scm
 theme.css               # Default dark theme (Catppuccin Mocha)
 ```

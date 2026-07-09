@@ -6,9 +6,9 @@ Tree-sitter syntax highlighting plugin for [Norgolith](https://github.com/NTBBlo
 
 ## What it does
 
-Adds syntax highlighting to fenced code blocks in Norg pages. Supports 14 languages.
+Adds syntax highlighting to fenced code blocks in Norg pages. Supports 17 languages.
 
-The plugin uses [tree-sitter](https://tree-sitter.github.io/) for parsing and [tree-sitter-highlight](https://crates.io/crates/tree-sitter-highlight) for token classification. Each language uses the official highlight queries bundled with its grammar crate.
+The plugin uses [tree-sitter](https://tree-sitter.github.io/) for parsing and [tree-sitter-highlight](https://crates.io/crates/tree-sitter-highlight) for token classification. Highlight queries come from [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) — the same queries Neovim uses, adapted for Rust tree-sitter (predicate conversion, `; inherits:` resolution).
 
 ## How it works
 
@@ -27,8 +27,6 @@ lith plugin install /path/to/norgolith-tree-sitter-highlight
 Or manually, copy the `.so` and `plugin.toml` into `plugins/norgolith-tree-sitter-highlight/`.
 
 ## Development
-
-The plugin lives in a separate repo from the Norgolith monorepo.
 
 ```sh
 cargo build --release
@@ -54,6 +52,9 @@ cargo run -- build   # from the site directory
 - HTML (`html`)
 - CSS (`css`)
 - Bash / Shell (`bash`, `sh`, `shell`)
+- Nix (`nix`)
+- Elixir / Erlang (`elixir`, `ex`, `exs`)
+- Markdown (`markdown`, `md`)
 - C (`c`)
 - C++ (`c++`, `cpp`, `cxx`)
 - Java (`java`)
@@ -61,17 +62,14 @@ cargo run -- build   # from the site directory
 - YAML (`yaml`, `yml`)
 - TOML (`toml`)
 - Ruby (`ruby`, `rb`)
-- Elixir / Erlang (`elixir`, `ex`, `exs`)
-- Nix (`nix`)
-- Markdown (`markdown`, `md`)
 
 Unlisted languages fall back to plain text (no highlighting, no errors).
 
 ## Theme
 
-The default theme uses [Catppuccin Mocha](https://github.com/catppuccin/catppuccin) colors. To customize, edit `assets/tree-sitter-theme.css` in your site directory. The file is only written once; subsequent builds will not overwrite it.
+The default theme uses [Catppuccin Mocha](https://github.com/catppuccin/catppuccin) colors with 94 semantic capture groups covering keywords, types, functions, variables, markup, tags, punctuation, operators, and CSS at-rules. Highlight classes use the `ts-` prefix with dot-separated sub-classes (e.g., `class="ts-keyword ts-conditional"`).
 
-Highlight classes use the `ts-` prefix with semantic names. See `theme.css` for the full list.
+To customize, edit `assets/tree-sitter-theme.css` in your site directory. The file is only written once; subsequent builds will not overwrite it.
 
 ## License
 
