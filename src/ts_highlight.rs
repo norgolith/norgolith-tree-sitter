@@ -26,7 +26,7 @@ fn cached_hl_config(lang: &str) -> Option<&'static HighlightConfiguration> {
         return Some(cfg);
     }
     let lc = lang_config(lang)?;
-    let mut cfg = Box::new(match HighlightConfiguration::new(lc.language, lang, lc.query, "", "") {
+    let mut cfg = Box::new(match HighlightConfiguration::new(lc.language, lang, lc.query, lc.injection, "") {
         Ok(c) => c,
         Err(_) => return None,
     });
@@ -51,6 +51,10 @@ const HIGHLIGHT_NAMES: &[&str] = &[
     "character.special",
     "comment",
     "comment.documentation",
+    "comment.error",
+    "comment.note",
+    "comment.todo",
+    "comment.warning",
     "constant",
     "constant.builtin",
     "constant.macro",
@@ -136,6 +140,7 @@ const HIGHLIGHT_NAMES: &[&str] = &[
 struct LanguageConfig {
     language: tree_sitter::Language,
     query: &'static str,
+    injection: &'static str,
 }
 
 fn lang_config(lang: &str) -> Option<LanguageConfig> {
@@ -143,86 +148,112 @@ fn lang_config(lang: &str) -> Option<LanguageConfig> {
         "rust" | "rs" => Some(LanguageConfig {
             language: tree_sitter_rust::LANGUAGE.into(),
             query: include_str!("queries/rust.scm"),
+            injection: include_str!("queries/line_block_comment_injection.scm"),
         }),
         "python" | "py" => Some(LanguageConfig {
             language: tree_sitter_python::LANGUAGE.into(),
             query: include_str!("queries/python.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "javascript" | "js" | "jsx" => Some(LanguageConfig {
             language: tree_sitter_javascript::LANGUAGE.into(),
             query: include_str!("queries/javascript.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "html" => Some(LanguageConfig {
             language: tree_sitter_html::LANGUAGE.into(),
             query: include_str!("queries/html.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "css" => Some(LanguageConfig {
             language: tree_sitter_css::LANGUAGE.into(),
             query: include_str!("queries/css.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "bash" | "sh" | "shell" => Some(LanguageConfig {
             language: tree_sitter_bash::LANGUAGE.into(),
             query: include_str!("queries/bash.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "nix" => Some(LanguageConfig {
             language: tree_sitter_nix::LANGUAGE.into(),
             query: include_str!("queries/nix.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "elixir" | "ex" | "exs" => Some(LanguageConfig {
             language: tree_sitter_elixir::LANGUAGE.into(),
             query: include_str!("queries/elixir.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "typescript" | "ts" => Some(LanguageConfig {
             language: tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
             query: include_str!("queries/typescript.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "markdown" | "md" => Some(LanguageConfig {
             language: tree_sitter_md::LANGUAGE.into(),
             query: include_str!("queries/markdown.scm"),
+            injection: "",
         }),
         "c" => Some(LanguageConfig {
             language: tree_sitter_c::LANGUAGE.into(),
             query: include_str!("queries/c.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "c++" | "cpp" | "cxx" => Some(LanguageConfig {
             language: tree_sitter_cpp::LANGUAGE.into(),
             query: include_str!("queries/cpp.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "java" => Some(LanguageConfig {
             language: tree_sitter_java::LANGUAGE.into(),
             query: include_str!("queries/java.scm"),
+            injection: include_str!("queries/line_block_comment_injection.scm"),
         }),
         "json" => Some(LanguageConfig {
             language: tree_sitter_json::LANGUAGE.into(),
             query: include_str!("queries/json.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "yaml" | "yml" => Some(LanguageConfig {
             language: tree_sitter_yaml::LANGUAGE.into(),
             query: include_str!("queries/yaml.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "toml" => Some(LanguageConfig {
             language: tree_sitter_toml_updated::language().into(),
             query: include_str!("queries/toml.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "ruby" | "rb" => Some(LanguageConfig {
             language: tree_sitter_ruby::LANGUAGE.into(),
             query: include_str!("queries/ruby.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "go" | "golang" => Some(LanguageConfig {
             language: tree_sitter_go::LANGUAGE.into(),
             query: include_str!("queries/go.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "lua" => Some(LanguageConfig {
             language: tree_sitter_lua::LANGUAGE.into(),
             query: include_str!("queries/lua.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "php" => Some(LanguageConfig {
             language: tree_sitter_php::LANGUAGE_PHP_ONLY.into(),
             query: include_str!("queries/php.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
         }),
         "diff" => Some(LanguageConfig {
             language: tree_sitter_diff::LANGUAGE.into(),
             query: include_str!("queries/diff.scm"),
+            injection: "",
+        }),
+        "comment" => Some(LanguageConfig {
+            language: tree_sitter_comment::LANGUAGE.into(),
+            query: include_str!("queries/comment.scm"),
+            injection: "",
         }),
         _ => None,
     }
@@ -257,14 +288,15 @@ fn markdown_highlight(source: &str, lang: &str) -> String {
         None => return html_escape(source),
     };
 
-    let injection_query = include_str!("queries/markdown_injections.scm");
     let inline_query = include_str!("queries/markdown_inline.scm");
+
+    let md_injection = include_str!("queries/markdown_injections.scm");
 
     let mut md_config = match HighlightConfiguration::new(
         tree_sitter_md::LANGUAGE.into(),
         lang,
         lc.query,
-        injection_query,
+        &md_injection,
         "",
     ) {
         Ok(c) => c,
@@ -333,7 +365,9 @@ fn add_line_numbers(html: &str, start: u32) -> String {
 fn render(config: &HighlightConfiguration, source: &str) -> String {
     let mut highlighter = Highlighter::new();
 
-    let events = match highlighter.highlight(config, source.as_bytes(), None, |_| None) {
+    let events = match highlighter.highlight(config, source.as_bytes(), None, |name| {
+        cached_hl_config(name)
+    }) {
         Ok(e) => e,
         Err(_) => return html_escape(source),
     };
@@ -668,6 +702,20 @@ index abc..def 100644
         let result = highlight(source, "diff", &default_cfg());
         assert!(result.contains("ts-diff ts-plus"), "diff plus: {result}");
         assert!(result.contains("ts-diff ts-minus"), "diff minus: {result}");
+    }
+
+    #[test]
+    fn test_highlight_comment_tags() {
+        let source = "TODO: this needs work\nFIXME(goofy): crash here";
+        let result = highlight(source, "comment", &default_cfg());
+        assert!(
+            result.contains("ts-comment ts-todo"),
+            "expected ts-comment ts-todo in: {result}"
+        );
+        assert!(
+            result.contains("ts-comment ts-error"),
+            "expected ts-comment ts-error in: {result}"
+        );
     }
 
     #[test]

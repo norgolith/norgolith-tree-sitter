@@ -62,6 +62,10 @@ pre code {
 /* Comments */
 .ts-comment { color: #6c7086; font-style: italic; }
 .ts-comment.ts-documentation { color: #6c7086; font-style: italic; font-weight: bold; }
+.ts-comment.ts-todo { color: #f9e2af; font-weight: bold; }
+.ts-comment.ts-note { color: #89b4fa; font-weight: bold; }
+.ts-comment.ts-warning { color: #fab387; font-weight: bold; }
+.ts-comment.ts-error { color: #f38ba8; font-weight: bold; }
 
 /* Types */
 .ts-type { color: #f9e2af; font-weight: bold; }
