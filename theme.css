@@ -157,7 +157,9 @@ pre code {
 
 /* Diff: added/removed lines */
 .ts-diff.ts-plus { color: #a6e3a1; background: rgba(166, 227, 161, 0.15); }
+.ts-diff.ts-plus > .ts-punctuation.ts-special { color: #a6e3a1; }
 .ts-diff.ts-minus { color: #f38ba8; background: rgba(243, 139, 168, 0.15); }
+.ts-diff.ts-minus > .ts-punctuation.ts-special { color: #f38ba8; }
 
 /* Line numbers */
 pre code {
