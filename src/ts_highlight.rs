@@ -235,6 +235,11 @@ fn lang_config(lang: &str) -> Option<LanguageConfig> {
             query: include_str!("queries/go.scm"),
             injection: include_str!("queries/generic_comment_injection.scm"),
         }),
+        "make" | "makefile" | "mk" => Some(LanguageConfig {
+            language: tree_sitter_make::LANGUAGE.into(),
+            query: include_str!("queries/make.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
+        }),
         "lua" => Some(LanguageConfig {
             language: tree_sitter_lua::LANGUAGE.into(),
             query: include_str!("queries/lua.scm"),
@@ -244,6 +249,21 @@ fn lang_config(lang: &str) -> Option<LanguageConfig> {
             language: tree_sitter_php::LANGUAGE_PHP_ONLY.into(),
             query: include_str!("queries/php.scm"),
             injection: include_str!("queries/generic_comment_injection.scm"),
+        }),
+        "sql" | "postgres" | "psql" | "sequel" => Some(LanguageConfig {
+            language: tree_sitter_sequel::LANGUAGE.into(),
+            query: include_str!("queries/sql.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
+        }),
+        "docker" | "dockerfile" | "Dockerfile" | "containerfile" => Some(LanguageConfig {
+            language: tree_sitter_containerfile::LANGUAGE.into(),
+            query: include_str!("queries/dockerfile.scm"),
+            injection: include_str!("queries/generic_comment_injection.scm"),
+        }),
+        "tera" | "tpl" => Some(LanguageConfig {
+            language: tree_sitter_tera::LANGUAGE.into(),
+            query: include_str!("queries/tera.scm"),
+            injection: include_str!("queries/tera_injections.scm"),
         }),
         "diff" => Some(LanguageConfig {
             language: tree_sitter_diff::LANGUAGE.into(),
@@ -690,6 +710,15 @@ function hello() {
     }
 
     #[test]
+    fn test_highlight_sql() {
+        let source = "SELECT * FROM users WHERE id = 1; -- active users";
+        let result = highlight(source, "sql", &default_cfg());
+        assert!(result.contains("<span class="), "sql: {result}");
+        assert!(result.contains("ts-keyword"), "sql keyword: {result}");
+        assert!(result.contains("ts-comment"), "sql comment: {result}");
+    }
+
+    #[test]
     fn test_highlight_diff() {
         let source = r#"diff --git a/foo b/foo
 index abc..def 100644
@@ -716,6 +745,42 @@ index abc..def 100644
             result.contains("ts-comment ts-error"),
             "expected ts-comment ts-error in: {result}"
         );
+    }
+
+    #[test]
+    fn test_highlight_make() {
+        let source = "all:\n\t@echo \"hello\"\n\n# comment";
+        let result = highlight(source, "make", &default_cfg());
+        assert!(result.contains("<span class="), "make: {result}");
+        assert!(result.contains("ts-function"), "make function: {result}");
+        assert!(result.contains("ts-comment"), "make comment: {result}");
+    }
+
+    #[test]
+    fn test_highlight_dockerfile() {
+        let source = "FROM ubuntu:22.04\nRUN apt update\n# comment";
+        let result = highlight(source, "dockerfile", &default_cfg());
+        assert!(result.contains("<span class="), "docker: {result}");
+        assert!(result.contains("ts-keyword"), "docker keyword: {result}");
+        assert!(result.contains("ts-comment"), "docker comment: {result}");
+    }
+
+    #[test]
+    fn test_highlight_tera() {
+        let source = "{% if x %}{{ y }}{% endif %}";
+        let result = highlight(source, "tera", &default_cfg());
+        assert!(result.contains("<span class="), "tera: {result}");
+        assert!(result.contains("ts-keyword"), "tera keyword: {result}");
+    }
+
+    #[test]
+    fn test_highlight_tera_html() {
+        let source = "<div class=\"foo\">{{ name }}</div>";
+        let result = highlight(source, "tera", &default_cfg());
+        assert!(result.contains("ts-tag"), "tera html tag: {result}");
+        assert!(result.contains("ts-string"), "tera html string: {result}");
+        assert!(result.contains("ts-variable"), "tera variable: {result}");
+        assert!(result.contains("</span><span class=\"ts-tag\">div</span>"), "closing tag name: {result}");
     }
 
     #[test]
