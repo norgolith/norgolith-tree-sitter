@@ -22,7 +22,7 @@ Find the tree-sitter grammar crate on crates.io (e.g., `tree-sitter-go`). Add it
 tree-sitter-go = "0.25.0"
 ```
 
-The crate must export `language()` or `LANGUAGE` (the tree-sitter `Language`). Some crates expose multiple grammars — e.g., `tree-sitter-php` has `LANGUAGE_PHP` (full PHP with HTML) and `LANGUAGE_PHP_ONLY` (pure PHP). Use the one appropriate for code blocks.
+The crate must export `language()` or `LANGUAGE` (the tree-sitter `Language`). Some crates expose multiple grammars -- e.g., `tree-sitter-php` has `LANGUAGE_PHP` (full PHP with HTML) and `LANGUAGE_PHP_ONLY` (pure PHP). Use the one appropriate for code blocks.
 
 ### 2. Create the highlight query file
 
@@ -77,9 +77,9 @@ Start from the [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesit
 
 **Finding node types**: Run `tree-sitter parse` on example code to see the AST, or check the grammar's `src/node-types.json`.
 
-**; inherits:** — if the query file contains `; inherits: <base>`, resolve it at copy time by concatenating the base file before the language-specific rules (the plugin does not resolve these at runtime).
+**; inherits:** -- if the query file contains `; inherits: <base>`, resolve it at copy time by concatenating the base file before the language-specific rules (the plugin does not resolve these at runtime).
 
-**#lua-match? → #match?** — nvim-treesitter uses Neovim Lua predicates (`#lua-match?`). Rust tree-sitter only supports `#match?`, `#eq?`, `#any-of?`, `#not-match?`, `#not-eq?`, `#any-not-of?`. Convert Lua patterns to regex:
+**#lua-match? → #match?** -- nvim-treesitter uses Neovim Lua predicates (`#lua-match?`). Rust tree-sitter only supports `#match?`, `#eq?`, `#any-of?`, `#not-match?`, `#not-eq?`, `#any-not-of?`. Convert Lua patterns to regex:
 - `%d` → `[0-9]`, `%u` → `[A-Z]`, `%l` → `[a-z]`, `%w` → `[0-9A-Za-z]`
 - `%a` → `[A-Za-z]`, `%s` → `[ \t\n]`
 - Escape sequences: `%.` → `\\.`, `%$` → `\\$`
@@ -107,7 +107,7 @@ fn lang_config(lang: &str) -> Option<LanguageConfig> {
 }
 ```
 
-The match result is cached automatically by `LANG_CACHE` (a `LazyLock<Mutex<HashMap<String, LanguageConfig>>>`) — the first call per language stores the config, subsequent calls skip the O(n) match.
+The match result is cached automatically by `LANG_CACHE` (a `LazyLock<Mutex<HashMap<String, LanguageConfig>>>`) -- the first call per language stores the config, subsequent calls skip the O(n) match.
 
 ### 4. Register highlight names (if needed)
 
@@ -121,7 +121,7 @@ const HIGHLIGHT_NAMES: &[&str] = &[
 ];
 ```
 
-Check the existing list first — most names from nvim-treesitter are already registered (94 names currently).
+Check the existing list first -- most names from nvim-treesitter are already registered (94 names currently).
 
 ### 5. Add CSS (if needed)
 

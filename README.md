@@ -8,7 +8,7 @@ Tree-sitter syntax highlighting plugin for [Norgolith](https://github.com/NTBBlo
 
 Adds syntax highlighting to fenced code blocks in Norg pages. Supports 20 languages.
 
-The plugin uses [tree-sitter](https://tree-sitter.github.io/) for parsing and [tree-sitter-highlight](https://crates.io/crates/tree-sitter-highlight) for token classification. Highlight queries come from [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) — the same queries Neovim uses, adapted for Rust tree-sitter (predicate conversion, `; inherits:` resolution).
+The plugin uses [tree-sitter](https://tree-sitter.github.io/) for parsing and [tree-sitter-highlight](https://crates.io/crates/tree-sitter-highlight) for token classification. Highlight queries come from [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) -- the same queries Neovim uses, adapted for Rust tree-sitter (predicate conversion, `; inherits:` resolution).
 
 ## How it works
 

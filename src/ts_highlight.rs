@@ -16,11 +16,27 @@ fn default_line_start() -> u32 {
     1
 }
 
-/// Cached LanguageConfig lookup — avoids O(n) match on every call.
-static LANG_CACHE: LazyLock<Mutex<HashMap<String, LanguageConfig>>> =
+/// Cached compiled HighlightConfigurations -- avoids re-parsing queries per call.
+static HL_CACHE: LazyLock<Mutex<HashMap<String, &'static HighlightConfiguration>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
-/// Recognized highlight names — must match captures in .scm files.
+fn cached_hl_config(lang: &str) -> Option<&'static HighlightConfiguration> {
+    let mut cache = HL_CACHE.lock().unwrap();
+    if let Some(cfg) = cache.get(lang) {
+        return Some(cfg);
+    }
+    let lc = lang_config(lang)?;
+    let mut cfg = Box::new(match HighlightConfiguration::new(lc.language, lang, lc.query, "", "") {
+        Ok(c) => c,
+        Err(_) => return None,
+    });
+    cfg.configure(HIGHLIGHT_NAMES);
+    let cfg: &'static HighlightConfiguration = Box::leak(cfg);
+    cache.insert(lang.to_string(), cfg);
+    Some(cfg)
+}
+
+/// Recognized highlight names -- must match captures in .scm files.
 const HIGHLIGHT_NAMES: &[&str] = &[
     "attribute",
     "attribute.builtin",
@@ -211,83 +227,15 @@ fn lang_config(lang: &str) -> Option<LanguageConfig> {
 /// Returns HTML with `<span class="ts-{name}">` wrapped tokens.
 /// Falls back to plain text if the language is unsupported or parsing fails.
 pub fn highlight(source: &str, lang: &str, config: &PluginConfig) -> String {
-    let lc = {
-        let mut cache = LANG_CACHE.lock().unwrap();
-        if let Some(lc) = cache.get(lang) {
-            lc.clone()
-        } else if let Some(lc) = lang_config(lang) {
-            cache.insert(lang.to_string(), lc.clone());
-            lc
-        } else {
-            return html_escape(source);
-        }
-    };
-
     let is_markdown = matches!(lang, "markdown" | "md");
 
-    let mut hl_config = match HighlightConfiguration::new(
-        lc.language,
-        lang,
-        lc.query,
-        "",
-        "",
-    ) {
-        Ok(c) => c,
-        Err(_) => return html_escape(source),
-    };
-    hl_config.configure(HIGHLIGHT_NAMES);
-
     let mut html = if is_markdown {
-        let injection_query = include_str!("queries/markdown_injections.scm");
-        let inline_query = include_str!("queries/markdown_inline.scm");
-
-        let mut md_config = match HighlightConfiguration::new(
-            tree_sitter_md::LANGUAGE.into(),
-            lang,
-            lc.query,
-            injection_query,
-            "",
-        ) {
-            Ok(c) => c,
-            Err(_) => return render(&hl_config, source),
-        };
-        md_config.configure(HIGHLIGHT_NAMES);
-
-        let mut inline_config = match HighlightConfiguration::new(
-            tree_sitter_md::INLINE_LANGUAGE.into(),
-            "markdown_inline",
-            inline_query,
-            "",
-            "",
-        ) {
-            Ok(c) => c,
-            Err(_) => return render(&md_config, source),
-        };
-        inline_config.configure(HIGHLIGHT_NAMES);
-
-        let mut highlighter = Highlighter::new();
-        let events = match highlighter.highlight(
-            &md_config,
-            source.as_bytes(),
-            None,
-            |name| {
-                if name == "markdown_inline" {
-                    Some(&inline_config)
-                } else {
-                    None
-                }
-            },
-        ) {
-            Ok(e) => e,
-            Err(_) => return html_escape(source),
-        };
-        let mut renderer = HtmlRenderer::new();
-        let _ = renderer.render(events, source.as_bytes(), &|highlight, out| {
-            emit_capture(highlight.0, out);
-        });
-        String::from_utf8_lossy(&renderer.html).trim_end().to_string()
+        markdown_highlight(source, lang)
     } else {
-        render(&hl_config, source)
+        match cached_hl_config(lang) {
+            Some(cfg) => render(cfg, source),
+            None => html_escape(source),
+        }
     };
 
     if config.line_numbers {
@@ -295,6 +243,62 @@ pub fn highlight(source: &str, lang: &str, config: &PluginConfig) -> String {
     }
 
     html
+}
+
+fn markdown_highlight(source: &str, lang: &str) -> String {
+    let lc = match lang_config(lang) {
+        Some(lc) => lc,
+        None => return html_escape(source),
+    };
+
+    let injection_query = include_str!("queries/markdown_injections.scm");
+    let inline_query = include_str!("queries/markdown_inline.scm");
+
+    let mut md_config = match HighlightConfiguration::new(
+        tree_sitter_md::LANGUAGE.into(),
+        lang,
+        lc.query,
+        injection_query,
+        "",
+    ) {
+        Ok(c) => c,
+        Err(_) => return html_escape(source),
+    };
+    md_config.configure(HIGHLIGHT_NAMES);
+
+    let mut inline_config = match HighlightConfiguration::new(
+        tree_sitter_md::INLINE_LANGUAGE.into(),
+        "markdown_inline",
+        inline_query,
+        "",
+        "",
+    ) {
+        Ok(c) => c,
+        Err(_) => return render(&md_config, source),
+    };
+    inline_config.configure(HIGHLIGHT_NAMES);
+
+    let mut highlighter = Highlighter::new();
+    let events = match highlighter.highlight(
+        &md_config,
+        source.as_bytes(),
+        None,
+        |name| {
+            if name == "markdown_inline" {
+                Some(&inline_config)
+            } else {
+                None
+            }
+        },
+    ) {
+        Ok(e) => e,
+        Err(_) => return html_escape(source),
+    };
+    let mut renderer = HtmlRenderer::new();
+    let _ = renderer.render(events, source.as_bytes(), &|highlight, out| {
+        emit_capture(highlight.0, out);
+    });
+    String::from_utf8_lossy(&renderer.html).trim_end().to_string()
 }
 
 fn add_line_numbers(html: &str, start: u32) -> String {
@@ -322,11 +326,6 @@ fn add_line_numbers(html: &str, start: u32) -> String {
 
 fn render(config: &HighlightConfiguration, source: &str) -> String {
     let mut highlighter = Highlighter::new();
-
-    // <-- start of ponytail: full config cache if profiling shows need -->
-    // markdown creates fresh md_config+inline_config each call.
-    // Cache would need thread-safe injection query handling.
-    // <-- end of ponytail -->
 
     let events = match highlighter.highlight(config, source.as_bytes(), None, |_| None) {
         Ok(e) => e,
