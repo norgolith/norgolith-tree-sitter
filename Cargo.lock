@@ -360,9 +360,7 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 
 [[package]]
 name = "norgolith-plugin-sdk"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe6fac287eb42cbf4db0a65f10b4da42a785770f0977b86e48373657aad5807c"
+version = "1.0.0"
 dependencies = [
  "libc",
  "serde",
@@ -371,7 +369,7 @@ dependencies = [
 
 [[package]]
 name = "norgolith-tree-sitter-highlight"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "libtest-mimic",
  "norgolith-plugin-sdk",

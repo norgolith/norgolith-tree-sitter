@@ -67,6 +67,6 @@ fn ensure_theme_css() {
     }
 }
 
-register_plugin!("norgolith-tree-sitter-highlight", "0.1.0",
+register_plugin!("norgolith-tree-sitter-highlight",
     hooks: [post_convert: post_convert_handler, post_render: post_render_handler]
 );

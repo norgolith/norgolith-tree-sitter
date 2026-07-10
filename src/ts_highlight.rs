@@ -223,7 +223,8 @@ pub fn highlight(source: &str, lang: &str, config: &PluginConfig) -> String {
         }
     };
 
-    // <-- start of ponytail: full config cache if profiling shows need -->
+    let is_markdown = matches!(lang, "markdown" | "md");
+
     let mut hl_config = match HighlightConfiguration::new(
         lc.language,
         lang,
@@ -235,33 +236,59 @@ pub fn highlight(source: &str, lang: &str, config: &PluginConfig) -> String {
         Err(_) => return html_escape(source),
     };
     hl_config.configure(HIGHLIGHT_NAMES);
-    // <-- end of ponytail: full config cache if profiling shows need -->
 
-    let mut highlighter = Highlighter::new();
-    let events = match highlighter.highlight(&hl_config, source.as_bytes(), None, |_| None) {
-        Ok(e) => e,
-        Err(_) => return html_escape(source),
-    };
+    let mut html = if is_markdown {
+        let injection_query = include_str!("queries/markdown_injections.scm");
+        let inline_query = include_str!("queries/markdown_inline.scm");
 
-    let mut renderer = HtmlRenderer::new();
-    let _ = renderer.render(events, source.as_bytes(), &|highlight, out| {
-        let idx = highlight.0;
-        if let Some(name) = HIGHLIGHT_NAMES.get(idx) {
-            out.extend_from_slice(b"class=\"");
-            let mut first = true;
-            for part in name.split('.') {
-                if !first {
-                    out.extend_from_slice(b" ");
+        let mut md_config = match HighlightConfiguration::new(
+            tree_sitter_md::LANGUAGE.into(),
+            lang,
+            lc.query,
+            injection_query,
+            "",
+        ) {
+            Ok(c) => c,
+            Err(_) => return render(&hl_config, source),
+        };
+        md_config.configure(HIGHLIGHT_NAMES);
+
+        let mut inline_config = match HighlightConfiguration::new(
+            tree_sitter_md::INLINE_LANGUAGE.into(),
+            "markdown_inline",
+            inline_query,
+            "",
+            "",
+        ) {
+            Ok(c) => c,
+            Err(_) => return render(&md_config, source),
+        };
+        inline_config.configure(HIGHLIGHT_NAMES);
+
+        let mut highlighter = Highlighter::new();
+        let events = match highlighter.highlight(
+            &md_config,
+            source.as_bytes(),
+            None,
+            |name| {
+                if name == "markdown_inline" {
+                    Some(&inline_config)
+                } else {
+                    None
                 }
-                out.extend_from_slice(b"ts-");
-                out.extend_from_slice(part.as_bytes());
-                first = false;
-            }
-            out.extend_from_slice(b"\"");
-        }
-    });
-
-    let mut html = String::from_utf8_lossy(&renderer.html).trim_end().to_string();
+            },
+        ) {
+            Ok(e) => e,
+            Err(_) => return html_escape(source),
+        };
+        let mut renderer = HtmlRenderer::new();
+        let _ = renderer.render(events, source.as_bytes(), &|highlight, out| {
+            emit_capture(highlight.0, out);
+        });
+        String::from_utf8_lossy(&renderer.html).trim_end().to_string()
+    } else {
+        render(&hl_config, source)
+    };
 
     if config.line_numbers {
         html = add_line_numbers(&html, config.line_numbers_start);
@@ -291,6 +318,41 @@ fn add_line_numbers(html: &str, start: u32) -> String {
         line_num += 1;
     }
     result
+}
+
+fn render(config: &HighlightConfiguration, source: &str) -> String {
+    let mut highlighter = Highlighter::new();
+
+    // <-- start of ponytail: full config cache if profiling shows need -->
+    // markdown creates fresh md_config+inline_config each call.
+    // Cache would need thread-safe injection query handling.
+    // <-- end of ponytail -->
+
+    let events = match highlighter.highlight(config, source.as_bytes(), None, |_| None) {
+        Ok(e) => e,
+        Err(_) => return html_escape(source),
+    };
+    let mut renderer = HtmlRenderer::new();
+    let _ = renderer.render(events, source.as_bytes(), &|highlight, out| {
+        emit_capture(highlight.0, out);
+    });
+    String::from_utf8_lossy(&renderer.html).trim_end().to_string()
+}
+
+fn emit_capture(idx: usize, out: &mut Vec<u8>) {
+    if let Some(name) = HIGHLIGHT_NAMES.get(idx) {
+        out.extend_from_slice(b"class=\"");
+        let mut first = true;
+        for part in name.split('.') {
+            if !first {
+                out.extend_from_slice(b" ");
+            }
+            out.extend_from_slice(b"ts-");
+            out.extend_from_slice(part.as_bytes());
+            first = false;
+        }
+        out.extend_from_slice(b"\"");
+    }
 }
 
 fn html_escape(input: &str) -> String {
@@ -435,6 +497,20 @@ This is code"#;
         let result = highlight(source, "markdown", &default_cfg());
         assert!(result.contains("<span class="));
         assert!(result.contains("ts-markup ts-heading ts-1"));
+    }
+
+    #[test]
+    fn test_highlight_markdown_inline() {
+        let source = "Hello **bold** and `code`";
+        let result = highlight(source, "markdown", &default_cfg());
+        assert!(
+            result.contains("ts-markup ts-strong"),
+            "expected ts-markup ts-strong in result: {result}"
+        );
+        assert!(
+            result.contains("ts-markup ts-raw"),
+            "expected ts-markup ts-raw in result: {result}"
+        );
     }
 
     #[test]
