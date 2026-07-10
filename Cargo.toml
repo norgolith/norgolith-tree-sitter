@@ -13,10 +13,10 @@ crate-type = ["cdylib"]
 [dependencies]
 tree-sitter = "~0.26"
 tree-sitter-rust = "~0.24"
-tree-sitter-python = "~0.23"
+tree-sitter-python = "0.25"
 tree-sitter-javascript = "~0.25"
 tree-sitter-html = "~0.23"
-tree-sitter-css = "~0.23"
+tree-sitter-css = "0.25"
 tree-sitter-bash = "~0.25"
 tree-sitter-nix = "~0.3"
 tree-sitter-elixir = "~0.3"
@@ -37,7 +37,7 @@ regex = "1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tree-sitter-highlight = "~0.26"
-norgolith-plugin-sdk = "1.0.1"
+norgolith-plugin-sdk = "1.1.0"
 
 [dev-dependencies]
 libtest-mimic = "0.8.2"
