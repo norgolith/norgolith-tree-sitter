@@ -65,7 +65,7 @@
 
 (float) @number.float
 
-(comment) @comment @spell
+(comment) @comment
 
 ((module
   .
@@ -82,7 +82,7 @@
 ; doc-strings
 (expression_statement
   (string
-    (string_content) @spell) @string.documentation)
+    (string_content)) @string.documentation)
 
 ; Tokens
 [

@@ -185,7 +185,7 @@
 [
   (comment)
   (html_comment)
-] @comment @spell
+] @comment
 
 ((comment) @comment.documentation
   (#match? @comment.documentation "^/[*][*][^*].*[*]/$"))

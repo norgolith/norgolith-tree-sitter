@@ -65,6 +65,7 @@ cargo run -- build   # from the site directory
 - Go (`go`, `golang`)
 - Lua (`lua`)
 - PHP (`php`)
+- DIFF (`diff`)
 
 Unlisted languages fall back to plain text (no highlighting, no errors).
 

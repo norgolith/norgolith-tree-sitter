@@ -19,7 +19,7 @@
 "or" @keyword.operator
 
 ; comments
-(comment) @comment @spell
+(comment) @comment
 
 ; strings
 (string_fragment) @string

@@ -476,7 +476,7 @@
 [
   (line_comment)
   (block_comment)
-] @comment @spell
+] @comment
 
 [
   (outer_doc_comment_marker)

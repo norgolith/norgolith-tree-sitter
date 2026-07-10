@@ -185,7 +185,7 @@
 [
   (comment)
   (html_comment)
-] @comment @spell
+] @comment
 
 ((comment) @comment.documentation
   (#match? @comment.documentation "^/[*][*][^*].*[*]/$"))
@@ -300,10 +300,8 @@
 ] @punctuation.bracket
 
 (template_substitution
-  [
-    "${"
-    "}"
-  ] @punctuation.special) @none
+  "${" @punctuation.special
+  "}" @punctuation.special)
 
 ; Imports
 ;----------
@@ -454,7 +452,7 @@
 
 (html_character_reference) @tag
 
-(jsx_text) @none @spell
+(jsx_text) @none
 
 (html_character_reference) @character.special
 

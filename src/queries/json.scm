@@ -37,4 +37,4 @@
   (#eq? @conceal "\\\"")
   (#set! conceal "\""))
 
-(comment) @comment @spell
+(comment) @comment

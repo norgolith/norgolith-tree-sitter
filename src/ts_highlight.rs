@@ -390,6 +390,17 @@ mod tests {
     }
 
     #[test]
+    fn test_highlight_comment() {
+        let source = r#"// this is a comment
+fn main() {}"#;
+        let result = highlight(source, "rust", &default_cfg());
+        assert!(
+            result.contains("ts-comment"),
+            "expected ts-comment in: {result}"
+        );
+    }
+
+    #[test]
     fn test_highlight_rust() {
         let source = r#"fn main() {
     println!("hello");
@@ -422,6 +433,16 @@ mod tests {
         assert!(result.contains("ts-keyword"));
         assert!(result.contains("ts-function"));
         assert!(result.contains("ts-string"));
+    }
+
+    #[test]
+    fn test_highlight_javascript_template() {
+        let source = r#"return `Hello, ${name}!`;"#;
+        let result = highlight(source, "javascript", &default_cfg());
+        assert!(
+            result.contains("ts-punctuation ts-special"),
+            "expected ts-punctuation ts-special in: {result}"
+        );
     }
 
     #[test]

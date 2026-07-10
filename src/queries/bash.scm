@@ -105,7 +105,7 @@
 
 (special_variable_name) @constant
 
-(comment) @comment @spell
+(comment) @comment
 
 (test_operator) @operator
 

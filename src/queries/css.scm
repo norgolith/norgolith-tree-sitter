@@ -14,7 +14,7 @@
   (from)
 ] @keyword
 
-(comment) @comment @spell
+(comment) @comment
 
 (tag_name) @tag
 

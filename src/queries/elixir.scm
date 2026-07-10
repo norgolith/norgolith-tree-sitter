@@ -25,7 +25,7 @@
   (#match? @comment "^_"))
 
 ; Comments
-(comment) @comment @spell
+(comment) @comment
 
 ; Strings
 (string) @string

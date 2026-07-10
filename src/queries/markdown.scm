@@ -120,4 +120,4 @@
 
 (backslash_escape) @string.escape
 
-(inline) @spell
+(inline)

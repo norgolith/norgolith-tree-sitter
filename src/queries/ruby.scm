@@ -216,7 +216,7 @@
 
 (nil) @constant.builtin
 
-(comment) @comment @spell
+(comment) @comment
 
 ((program
   .

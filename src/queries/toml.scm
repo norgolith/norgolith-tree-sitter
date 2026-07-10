@@ -7,7 +7,7 @@
 
 (boolean) @boolean
 
-(comment) @comment @spell
+(comment) @comment
 
 (escape_sequence) @string.escape
 
