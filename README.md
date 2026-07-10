@@ -76,10 +76,10 @@ To customize, edit `assets/tree-sitter-theme.css` in your site directory. The fi
 
 ## Configuration
 
-Add to your site's `plugin.toml`:
+Add to your site's `norgolith.toml`:
 
 ```toml
-[config.norgolith-tree-sitter-highlight]
+[plugins.norgolith-tree-sitter-highlight]
 line-numbers = true
 line-numbers-start = 1
 ```
