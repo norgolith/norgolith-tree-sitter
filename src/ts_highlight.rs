@@ -287,7 +287,7 @@ fn markdown_highlight(source: &str, lang: &str) -> String {
             if name == "markdown_inline" {
                 Some(&inline_config)
             } else {
-                None
+                cached_hl_config(name)
             }
         },
     ) {
