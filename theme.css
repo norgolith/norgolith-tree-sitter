@@ -155,6 +155,10 @@ pre code {
 /* @interface */
 .ts-interface { color: #f9e2af; font-weight: bold; }
 
+/* Diff: added/removed lines */
+.ts-diff.ts-plus { color: #a6e3a1; background: rgba(166, 227, 161, 0.15); }
+.ts-diff.ts-minus { color: #f38ba8; background: rgba(243, 139, 168, 0.15); }
+
 /* Line numbers */
 pre code {
     counter-reset: line;

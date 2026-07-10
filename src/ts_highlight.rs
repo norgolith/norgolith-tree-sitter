@@ -55,6 +55,8 @@ const HIGHLIGHT_NAMES: &[&str] = &[
     "constant.builtin",
     "constant.macro",
     "constructor",
+    "diff.minus",
+    "diff.plus",
     "function",
     "function.builtin",
     "function.call",
@@ -217,6 +219,10 @@ fn lang_config(lang: &str) -> Option<LanguageConfig> {
         "php" => Some(LanguageConfig {
             language: tree_sitter_php::LANGUAGE_PHP_ONLY.into(),
             query: include_str!("queries/php.scm"),
+        }),
+        "diff" => Some(LanguageConfig {
+            language: tree_sitter_diff::LANGUAGE.into(),
+            query: include_str!("queries/diff.scm"),
         }),
         _ => None,
     }
@@ -626,6 +632,21 @@ function hello() {
         assert!(result.contains("ts-keyword"));
         assert!(result.contains("ts-function"));
         assert!(result.contains("ts-string"));
+    }
+
+    #[test]
+    fn test_highlight_diff() {
+        let source = r#"diff --git a/foo b/foo
+index abc..def 100644
+--- a/foo
++++ b/foo
+@@ -1 +1 @@
+-hello
++world
+"#;
+        let result = highlight(source, "diff", &default_cfg());
+        assert!(result.contains("ts-diff ts-plus"), "diff plus: {result}");
+        assert!(result.contains("ts-diff ts-minus"), "diff minus: {result}");
     }
 
     #[test]
