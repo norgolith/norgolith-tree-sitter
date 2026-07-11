@@ -146,7 +146,8 @@ pre code {
 .ts-markup.ts-list.ts-unchecked { color: #9399b2; }
 .ts-markup.ts-quote { color: #6c7086; font-style: italic; }
 .ts-markup.ts-raw { color: #a6e3a1; }
-.ts-markup.ts-raw.ts-block { color: #a6e3a1; background: #313244; }
+.ts-markup.ts-raw.ts-block { color: #a6e3a1; background: #232336; display: inline-block; width: 90%; }
+.ts-markup.ts-raw.ts-block:empty::before { content: '\00a0'; }
 
 /* CSS-specific at-rules */
 .ts-charset { color: #6c7086; font-style: italic; }

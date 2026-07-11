@@ -25,8 +25,6 @@
 (atx_heading
   (atx_h6_marker)) @markup.heading.6
 
-(info_string) @label
-
 (pipe_table_header
   (pipe_table_cell) @markup.heading)
 
@@ -46,11 +44,6 @@
 
 ((fenced_code_block) @markup.raw.block
   (#set! priority 90))
-
-(fenced_code_block
-  (fenced_code_block_delimiter) @markup.raw.block
-  (#set! conceal "")
-  (#set! conceal_lines ""))
 
 (fenced_code_block
   (info_string
@@ -113,10 +106,7 @@
 ] @keyword.directive
   (#set! priority 90))
 
-[
-  (block_continuation)
-  (block_quote_marker)
-] @punctuation.special
+(block_quote_marker) @punctuation.special
 
 (backslash_escape) @string.escape
 

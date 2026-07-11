@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
 use serde::Deserialize;
 use tree_sitter_highlight::{HighlightConfiguration, Highlighter, HtmlRenderer};
+use regex::Regex;
 
 #[derive(Deserialize, Default)]
 #[serde(rename_all = "kebab-case")]
@@ -356,7 +357,22 @@ fn markdown_highlight(source: &str, lang: &str) -> String {
     let _ = renderer.render(events, source.as_bytes(), &|highlight, out| {
         emit_capture(highlight.0, out);
     });
-    String::from_utf8_lossy(&renderer.html).trim_end().to_string()
+    let mut html = String::from_utf8_lossy(&renderer.html).to_string();
+
+    // _block_close (external scanner token) extends fenced_code_block past
+    // the closing delimiter, consuming trailing blank lines. HtmlRenderer
+    // splits at \n and reopens the @markup.raw.block span on the blank line,
+    // giving it code-block background. Remove the span wrapper but keep the
+    // blank line by replacing \n + empty_span + \n with \n\n.
+    // Internal empty lines are unaffected (preceding span isn't backtick-only).
+    // trim_end() then strips any trailing \n\n, so EOF blank lines disappear.
+    let re = Regex::new(
+        r#"(<span class="ts-markup ts-raw ts-block">`+</span>)\n<span class="ts-markup ts-raw ts-block"></span>\n"#,
+    )
+    .unwrap();
+    html = re.replace_all(&html, "$1\n\n").to_string();
+
+    html.trim_end().to_string()
 }
 
 fn add_line_numbers(html: &str, start: u32) -> String {
@@ -580,6 +596,51 @@ This is code"#;
     }
 
     #[test]
+    fn test_highlight_markdown_codeblock() {
+        let source = r#"# Hello
+
+This is **bold** and _italic_.
+
+- Item 1
+- Item 2
+
+```lua
+local function greet(name)
+  print("Hello " .. name .. "!")
+
+end
+```
+
+```python
+# Greet someone
+def greet(name: str) -> str:
+    return f"Hello, {name}!"
+
+print(greet("world"))
+```"#;
+        let result = highlight(source, "markdown", &default_cfg());
+        println!("=== MARKDOWN CODEBLOCK ===");
+        println!("{}", result);
+        println!("=== END ===");
+        assert!(result.contains("ts-keyword"), "has keyword: {result}");
+        assert!(result.contains("ts-function"), "has function: {result}");
+        assert!(result.contains("ts-string"), "has string: {result}");
+        // no empty punctuation.special spans in code
+        let n = result.matches("<span class=\"ts-punctuation ts-special\"></span>").count();
+        assert_eq!(n, 0, "no empty punctuation spans, found: {n}");
+    }
+
+    #[test]
+    fn test_highlight_markdown_codeblock_simple() {
+        let source = r#"```lua
+local x = 1
+```"#;
+        let result = highlight(source, "markdown", &default_cfg());
+        assert!(result.contains("ts-keyword"), "has keyword: {result}");
+        assert!(result.contains("ts-number"), "has number: {result}");
+    }
+
+    #[test]
     fn test_highlight_markdown_inline() {
         let source = "Hello **bold** and `code`";
         let result = highlight(source, "markdown", &default_cfg());
@@ -695,6 +756,19 @@ end"#;
         assert!(result.contains("ts-keyword"));
         assert!(result.contains("ts-string"));
     }
+
+    #[test]
+    fn test_highlight_lua_local_function() {
+        let source = r#"local function greet(name)
+  print("Hello " .. name .. "!")
+end"#;
+        let result = highlight(source, "lua", &default_cfg());
+        assert!(result.contains("ts-function"), "ts-function: {result}");
+        assert!(result.contains("ts-keyword"), "ts-keyword: {result}");
+        assert!(result.contains("ts-string"), "ts-string: {result}");
+    }
+
+
 
     #[test]
     fn test_highlight_php() {
