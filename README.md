@@ -6,7 +6,7 @@ Tree-sitter syntax highlighting plugin for [Norgolith](https://github.com/NTBBlo
 
 ## What it does
 
-Adds syntax highlighting to fenced code blocks in Norg pages. Supports 20 languages.
+Adds syntax highlighting to fenced code blocks in Norg pages. Supports 25 languages.
 
 The plugin uses [tree-sitter](https://tree-sitter.github.io/) for parsing and [tree-sitter-highlight](https://crates.io/crates/tree-sitter-highlight) for token classification. Highlight queries come from [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) -- the same queries Neovim uses, adapted for Rust tree-sitter (predicate conversion, `; inherits:` resolution).
 
@@ -65,13 +65,17 @@ cargo run -- build   # from the site directory
 - Go (`go`, `golang`)
 - Lua (`lua`)
 - PHP (`php`)
+- SQL (`sql`, `postgres`, `psql`, `sequel`)
+- Make (`make`, `makefile`, `mk`)
+- Docker / Containerfile (`docker`, `dockerfile`, `containerfile`)
+- Tera (`tera`, `tpl`)
 - DIFF (`diff`)
 
 Unlisted languages fall back to plain text (no highlighting, no errors).
 
 ## Theme
 
-The default theme uses [Catppuccin Mocha](https://github.com/catppuccin/catppuccin) colors with 94 semantic capture groups covering keywords, types, functions, variables, markup, tags, punctuation, operators, and CSS at-rules. Highlight classes use the `ts-` prefix with dot-separated sub-classes (e.g., `class="ts-keyword ts-conditional"`).
+The default theme uses [Catppuccin Mocha](https://github.com/catppuccin/catppuccin) colors with 96 semantic capture groups covering keywords, types, functions, variables, markup, tags, punctuation, operators, and CSS at-rules. Highlight classes use the `ts-` prefix with dot-separated sub-classes (e.g., `class="ts-keyword ts-conditional"`).
 
 To customize, edit `assets/tree-sitter-theme.css` in your site directory. The file is only written once; subsequent builds will not overwrite it.
 
