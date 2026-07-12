@@ -73,6 +73,10 @@ cargo run -- build   # from the site directory
 
 Unlisted languages fall back to plain text (no highlighting, no errors).
 
+> [!TIP]
+>
+> TODO comments will also have syntax highlighting since this plugin also injects tree-sitter-comment.
+
 ## Theme
 
 The default theme uses [Catppuccin Mocha](https://github.com/catppuccin/catppuccin) colors with 96 semantic capture groups covering keywords, types, functions, variables, markup, tags, punctuation, operators, and CSS at-rules. Highlight classes use the `ts-` prefix with dot-separated sub-classes (e.g., `class="ts-keyword ts-conditional"`).
