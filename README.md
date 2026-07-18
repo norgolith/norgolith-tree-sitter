@@ -83,6 +83,8 @@ The default theme uses [Catppuccin Mocha](https://github.com/catppuccin/catppucc
 
 To customize, edit `assets/tree-sitter-theme.css` in your site directory. The file is only written once; subsequent builds will not overwrite it.
 
+If your theme ships its own CSS at a custom path, set `css-path` in the plugin config — the plugin will skip writing the default CSS and inject your theme's stylesheet instead. See [Configuration](#configuration).
+
 ## Configuration
 
 Add to your site's `norgolith.toml`:
@@ -93,10 +95,19 @@ line-numbers = true
 line-numbers-start = 1
 ```
 
+Themed (theme ships its own CSS):
+
+```toml
+[plugins.norgolith-tree-sitter-highlight]
+css-path = "/assets/css/tree-sitter-theme.css"
+line-numbers = true
+```
+
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `line-numbers` | bool | `false` | Add line numbers to code blocks |
 | `line-numbers-start` | integer | `1` | Starting line number |
+| `css-path` | string | — | Custom path for theme CSS. When set, plugin skips writing default CSS and injects this URL instead |
 
 ## License
 

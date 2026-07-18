@@ -11,6 +11,8 @@ pub struct PluginConfig {
     pub line_numbers: bool,
     #[serde(default = "default_line_start")]
     pub line_numbers_start: u32,
+    #[serde(default)]
+    pub css_path: Option<String>,
 }
 
 fn default_line_start() -> u32 {
